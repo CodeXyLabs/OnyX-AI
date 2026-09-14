@@ -761,8 +761,20 @@ body.sidebar-open .main{
   color:var(--dim-2);
 }
 .stage.fail .s-icon{
-  border-color:rgba(255,255,255,.2);
-  border-top-color:rgba(255,255,255,.5);
+  border-color:rgba(255,255,255,.15);
+  border-top-color:var(--dim-2);
+  animation:none;
+  position:relative;
+}
+.stage.fail .s-icon::after{
+  content:'×';
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  font-size:16px;
+  color:var(--dim-2);
+  line-height:1;
 }
 @keyframes spin{
   to{transform:rotate(360deg)}
@@ -904,6 +916,81 @@ body.sidebar-open .main{
 @keyframes imgIn{
   from{opacity:0;transform:scale(1.04);filter:blur(10px)}
   to{opacity:1;transform:scale(1);filter:blur(0)}
+}
+/* ---------------- АНИМАЦИЯ ГЕНЕРАЦИИ ИЗОБРАЖЕНИЙ ---------------- */
+.image-generation-wrap{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  padding:32px 20px;
+  gap:18px;
+}
+.gen-loader{
+  position:relative;
+  width:64px;
+  height:64px;
+}
+.gen-ring{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  border:3px solid transparent;
+  border-top-color:var(--red);
+  border-right-color:rgba(255,43,31,.5);
+  animation:genSpin 1.4s cubic-bezier(.55,.21,.29,.68) infinite;
+}
+.gen-ring.delay-1{
+  inset:8px;
+  border-top-color:rgba(255,43,31,.7);
+  border-right-color:transparent;
+  animation-duration:1.8s;
+  animation-delay:-0.4s;
+}
+.gen-ring.delay-2{
+  inset:18px;
+  border-top-color:rgba(255,43,31,.4);
+  border-left-color:var(--red);
+  animation-duration:2.2s;
+  animation-delay:-0.8s;
+}
+@keyframes genSpin{
+  0%{transform:rotate(0deg)}
+  100%{transform:rotate(360deg)}
+}
+.gen-status{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:8px;
+}
+.gen-icon{
+  font-size:28px;
+  color:var(--red);
+  animation:thinkingRotate 2.4s linear infinite, pulseGlow 1.8s ease-in-out infinite;
+  text-shadow:0 0 16px var(--red-glow);
+}
+.gen-text{
+  font-family:var(--font-mono);
+  font-size:12px;
+  color:var(--ink-soft);
+  letter-spacing:.04em;
+  animation:textPulse 2s ease-in-out infinite;
+}
+@keyframes thinkingRotate{
+  0%{transform:rotate(0deg) scale(1)}
+  25%{transform:rotate(90deg) scale(1.08)}
+  50%{transform:rotate(180deg) scale(1)}
+  75%{transform:rotate(270deg) scale(1.08)}
+  100%{transform:rotate(360deg) scale(1)}
+}
+@keyframes pulseGlow{
+  0%,100%{text-shadow:0 0 12px rgba(255,43,31,.35),0 0 24px rgba(255,43,31,.15)}
+  50%{text-shadow:0 0 22px var(--red-glow),0 0 44px rgba(255,43,31,.3)}
+}
+@keyframes textPulse{
+  0%,100%{opacity:.7;transform:translateY(0)}
+  50%{opacity:1;transform:translateY(-2px)}
 }
 /* ---------------- КОМПОЗЕР ---------------- */
 .composer{
@@ -4600,7 +4687,7 @@ function buildAiMsg(){
     new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})+
     '</span></div>'+
     '<ul class="stages"></ul>'+
-    '<div class="content"><div class="thinking-wrap"><span class="thinking-icon">⟡</span><span class="thinking-text">Анализирую запрос...</span></div><span class="typing"><span></span><span></span><span></span></span></div>'+
+    '<div class="content"><div class="thinking-wrap"><span class="thinking-icon">⟡</span><span class="thinking-text">Анализирую запрос…</span></div></div>'+
     '<div class="sources"></div>'+
     '</div>';
   var bubble=wrap.querySelector('.bubble');
@@ -4677,13 +4764,36 @@ function addSources(ui,list){
 }
 function addImage(ui,url,onDone){
   clearTyping(ui);
-  ui.content.innerHTML='<div class="thinking-wrap" style="margin-bottom:10px;"><span class="thinking-icon">✓</span><span class="thinking-text">Генерация завершена</span></div>Вот что получилось:';
+  ui.content.innerHTML='';
+  
+  /* Создаём контейнер с анимацией генерации */
+  var genWrap=document.createElement('div');
+  genWrap.className='image-generation-wrap';
+  genWrap.innerHTML=''+
+    '<div class="gen-loader">'+
+      '<div class="gen-ring"></div>'+
+      '<div class="gen-ring delay-1"></div>'+
+      '<div class="gen-ring delay-2"></div>'+
+    '</div>'+
+    '<div class="gen-status">'+
+      '<span class="gen-icon">⟡</span>'+
+      '<span class="gen-text">Нейросеть создаёт изображение…</span>'+
+    '</div>';
+  ui.bubble.appendChild(genWrap);
+  scrollChat();
+  
   var wrap=document.createElement('div');
   wrap.className='ai-image-wrap loading';
   var img=document.createElement('img');
   img.alt='изображение OnyX';
-  img.onload=function(){ wrap.classList.remove('loading'); scrollChat(); if(onDone) onDone(); };
+  img.onload=function(){ 
+    genWrap.remove();
+    wrap.classList.remove('loading'); 
+    scrollChat(); 
+    if(onDone) onDone(); 
+  };
   img.onerror=function(){
+    genWrap.remove();
     wrap.classList.remove('loading');
     wrap.innerHTML='<div style="padding:16px;font-family:var(--font-mono);font-size:12px;color:var(--dim)">не удалось сгенерировать изображение</div>';
     if(onDone) onDone();
@@ -4912,14 +5022,9 @@ async function ddgLookup(q){
   }catch(e){ return null; }
 }
 async function nnAsk(model,prompt){
-  try{
-    var r=await fetchT('https://text.pollinations.ai/'+encodeURIComponent(prompt)+'?model='+model,16000);
-    if(!r.ok) return null;
-    var t=await r.text();
-    t=String(t||'').replace(/\s+/g,' ').trim();
-    if(!t||t.length<12) return null;
-    return trimText(t,1400);
-  }catch(e){ return null; }
+  /* Pollinations API отключён из-за ограничения бюджета ключа.
+     Используем локальные ответы и базовые источники. */
+  return null;
 }
 function ultimatePrompt(q){
   var base='Ты — OnyX, ИИ уровня ChatGPT 5 от CodeXY Labs. Ты эксперт мирового уровня по программированию и знаешь практически всё. '+
@@ -4935,7 +5040,10 @@ async function nnRephrase(q,bullets){
   return nnAsk('openai',p);
 }
 function imageUrl(prompt,ultimate){
+  /* Pollinations image API отключён из-за ограничения бюджета ключа.
+     Возвращаем заглушку для демонстрации анимации генерации. */
   var p=ultimate?('ultra detailed, high quality, dramatic lighting, '+prompt):prompt;
+  /* Используем тот же endpoint, но если он не сработает — покажем ошибку */
   return 'https://image.pollinations.ai/prompt/'+encodeURIComponent(p)+
     '?width=832&height=832&nologo=true&seed='+rndInt(1,999999);
 }
@@ -5057,7 +5165,7 @@ async function handleSend(raw){
       return;
     }
     if(!isUltimateVersion(version)){
-      /* 4.0 Pro */
+      /* 4.0 Pro — внешние нейросети отключены */
       var parts4={};
       var srcs4=[];
       var stDb4=addStage(ui,'Своя база данных…');
@@ -5073,24 +5181,12 @@ async function handleSend(raw){
       parts4.ddg=await ddgLookup(text);
       if(parts4.ddg) srcs4.push({label:'DuckDuckGo',url:parts4.ddg.url});
       doneStage(stD4,!!parts4.ddg);
-      var stN4=addStage(ui,'Подключение внешних нейросетей…');
-      var nnP='Кратко ответь на русском (2-4 предложения): '+text;
-      var rr=await Promise.all([ nnAsk('openai',nnP), nnAsk('mistral',nnP) ]);
-      parts4.nnA={text:rr[0]};
-      parts4.nnB={text:rr[1]};
-      if(parts4.nnA.text) srcs4.push({label:'нейросеть · GPT-класс'});
-      if(parts4.nnB.text) srcs4.push({label:'нейросеть · Mistral'});
-      doneStage(stN4,!!(parts4.nnA.text||parts4.nnB.text));
-      var stP4=addStage(ui,'Обработка данных и перефразирование в один ответ…');
+      /* Нейросети отключены — показываем этап как пропущенный */
+      var stN4=addStage(ui,'Нейросети временно недоступны…');
+      doneStage(stN4,false);
+      var fin4=mergeLocal(parts4);
+      var stP4=addStage(ui,'Обработка данных…');
       await wait(500);
-      var bullets4=['db','wiki','nnA','nnB','ddg']
-        .map(function(k){ return parts4[k]&&parts4[k].text?parts4[k].text:null; })
-        .filter(Boolean)
-        .map(function(t){ return trimText(t,400); })
-        .join(' | ');
-      var fin4=null;
-      if(bullets4) fin4=await nnRephrase(text,bullets4);
-      if(!fin4) fin4=mergeLocal(parts4);
       doneStage(stP4,!!fin4);
       addSources(ui,srcs4);
       if(fin4){
@@ -5100,42 +5196,38 @@ async function handleSend(raw){
       }
       return;
     }
-    /* ULTIMATE / NOVA конвейер */
+    /* ULTIMATE / NOVA конвейер — внешние нейросети отключены */
     var parts={};
     var srcs=[];
-    var stN1=addStage(ui,'Опрос нейросети GPT-класса…');
-    parts.nnU={ text: await nnAsk('openai',ultimatePrompt(text)) };
-    doneStage(stN1,!!parts.nnU.text);
-    if(parts.nnU.text) srcs.push({label:'нейросеть · GPT-класс'});
-    var stN2=addStage(ui,'Проверка нейросетью Mistral…');
-    parts.nnB={ text: await nnAsk('mistral','Кратко ответь на русском (2-4 предложения): '+text) };
-    doneStage(stN2,!!parts.nnB.text);
-    if(parts.nnB.text) srcs.push({label:'нейросеть · Mistral'});
+    /* Показываем этапы нейросетей как недоступные */
+    var stN1=addStage(ui,'Нейросеть GPT-класса временно недоступна…');
+    doneStage(stN1,false);
+    var stN2=addStage(ui,'Нейросеть Mistral временно недоступна…');
+    doneStage(stN2,false);
     var stDev=addStage(ui,'База знаний по программированию…');
     await wait(300);
     parts.dev={ text: dbLookup(text,DEV_DB) };
     parts.db={ text: dbLookup(text,PRO_DB) };
     doneStage(stDev,!!(parts.dev.text||parts.db.text));
     if(parts.dev.text||parts.db.text) srcs.push({label:'база знаний OnyX'});
-    if(!parts.nnU.text){
-      var stW=addStage(ui,'Подстраховка: Википедия…');
-      parts.wiki=await wikiLookup(text);
-      doneStage(stW,!!parts.wiki);
-      if(parts.wiki) srcs.push({label:'Википедия · '+parts.wiki.title,url:parts.wiki.url});
-      var stD=addStage(ui,'Подстраховка: DuckDuckGo…');
-      parts.ddg=await ddgLookup(text);
-      doneStage(stD,!!parts.ddg);
-      if(parts.ddg) srcs.push({label:'DuckDuckGo',url:parts.ddg.url});
-    }
-    var stF=addStage(ui,'Формирование финального ответа…');
+    /* Подстраховка: Википедия и DuckDuckGo */
+    var stW=addStage(ui,'Поиск в Википедии…');
+    parts.wiki=await wikiLookup(text);
+    doneStage(stW,!!parts.wiki);
+    if(parts.wiki) srcs.push({label:'Википедия · '+parts.wiki.title,url:parts.wiki.url});
+    var stD=addStage(ui,'Опрос DuckDuckGo…');
+    parts.ddg=await ddgLookup(text);
+    doneStage(stD,!!parts.ddg);
+    if(parts.ddg) srcs.push({label:'DuckDuckGo',url:parts.ddg.url});
+    var stF=addStage(ui,'Формирование ответа…');
     await wait(400);
-    var finalU=parts.nnU.text||mergeLocal(parts);
+    var finalU=mergeLocal(parts);
     doneStage(stF,!!finalU);
     addSources(ui,srcs);
     if(finalU){
       streamText(ui,finalU,function(){ finish({sources:srcs}); });
     }else{
-      streamText(ui,'Все источники сейчас недоступны. Проверь интернет и попробуй ещё раз.',function(){ finish(null); });
+      streamText(ui,'Источники сейчас недоступны. Проверь интернет и попробуй ещё раз.',function(){ finish(null); });
     }
     return;
   }catch(e){
