@@ -1518,6 +1518,34 @@ body.sidebar-open .main{
     --blur-md:10px;
     --shadow-glass:0 10px 30px rgba(0,0,0,.5);
   }
+  body[data-theme="light"]{
+    --bg:#f8f9fa;
+    --ink:#1a1a1a;
+    --ink-soft:#4a4a4a;
+    --dim:#757575;
+    --dim-2:#9e9e9e;
+    --line:rgba(0,0,0,.12);
+    --line-soft:rgba(0,0,0,.06);
+    --glass-2:rgba(255,255,255,.85);
+    --red:#d32f2f;
+    --red-deep:#b71c1c;
+    --red-soft:rgba(211,47,47,.12);
+    --red-glow:rgba(211,47,47,.3);
+  }
+  body[data-theme="dark"]{
+    --bg:#121212;
+    --ink:#e0e0e0;
+    --ink-soft:#bdbdbd;
+    --dim:#757575;
+    --dim-2:#616161;
+    --line:rgba(255,255,255,.1);
+    --line-soft:rgba(255,255,255,.05);
+    --glass-2:rgba(30,30,30,.85);
+    --red:#ef5350;
+    --red-deep:#e53935;
+    --red-soft:rgba(239,83,80,.15);
+    --red-glow:rgba(239,83,80,.35);
+  }
   .app{
     padding:max(10px,var(--safe-top)) 10px max(10px,var(--safe-bottom)) 10px;
     gap:10px;
@@ -1762,27 +1790,101 @@ body.sidebar-open .main{
 <div class="modal-overlay" id="settingsModal">
   <div class="modal glass">
     <div class="modal-head">
-      <span class="modal-title">⚙ Настройки</span>
+      <span class="modal-title">⚙ Настройки OnyX</span>
       <button class="modal-close" id="settingsClose">✕</button>
     </div>
+    
+    <!-- Выбор провайдера -->
     <div class="set-block">
-      <div class="set-label">Код активации</div>
-      <div class="act-row">
-        <input class="act-input" id="activationCode" type="text" placeholder="PERM-XXXXXX-XXXXXX" autocomplete="off">
-        <button class="act-btn" id="activateBtn">Активировать</button>
+      <div class="set-label">Провайдер ИИ</div>
+      <select id="aiProvider" class="act-input" style="width:100%;margin-bottom:10px;" onchange="updateProviderUI()">
+        <option value="huggingface">Hugging Face (Cloud)</option>
+        <option value="ollama">Ollama (Local)</option>
+        <option value="none">Только Поиск (Offline)</option>
+      </select>
+      <div class="act-hint" id="providerHint">Hugging Face работает в облаке. Ollama требует свой сервер.</div>
+    </div>
+
+    <!-- Настройки Hugging Face -->
+    <div class="set-block" id="hfSettings">
+      <div class="set-label">Модель Hugging Face</div>
+      <select id="hfModel" class="act-input" style="width:100%;margin-bottom:10px;">
+        <option value="mistralai/Mistral-7B-Instruct-v0.3">Mistral 7B (Быстрая)</option>
+        <option value="meta-llama/Meta-Llama-3-8B-Instruct">Llama 3 (Умная)</option>
+        <option value="google/gemma-2b-it">Gemma 2B (Легкая)</option>
+        <option value="Qwen/Qwen2.5-7B-Instruct">Qwen 2.5 (Баланс)</option>
+      </select>
+      
+      <div class="set-label" style="margin-top:15px;">Hugging Face Token</div>
+      <input class="act-input" id="hfToken" type="password" placeholder="hf_..." style="width:100%;margin-bottom:5px;">
+      <div class="act-hint">Получите бесплатно на <a href="https://huggingface.co/settings/tokens" target="_blank" style="color:#f44336;">huggingface.co</a></div>
+    </div>
+
+    <!-- Настройки Ollama -->
+    <div class="set-block" id="ollamaSettings" style="display:none;">
+      <div class="act-hint" style="margin-bottom:15px;background:rgba(244,67,54,0.1);padding:10px;border-radius:8px;border-left:3px solid #f44336;">
+        <b>Как запустить:</b><br>
+        1. Установите <a href="https://ollama.com" target="_blank" style="color:#f44336;">Ollama</a><br>
+        2. Запустите: <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">OLLAMA_ORIGINS="*" ollama serve</code><br>
+        3. Скачайте модель через кнопку ниже
       </div>
-      <div class="act-hint">PERM — навсегда · YEAR — на 1 год · MONTH — на 1 месяц. Каждый код одноразовый.</div>
+      
+      <div class="set-label">URL Сервера</div>
+      <input class="act-input" id="ollamaUrl" type="text" value="http://localhost:11434" style="width:100%;margin-bottom:10px;">
+      
+      <div class="set-label" style="margin-top:15px;">Модель</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <select id="ollamaModelSelect" class="act-input" style="flex:1;">
+          <option value="llama3.2">Llama 3.2 (1.2GB) ⭐</option>
+          <option value="phi3">Phi-3 Mini (2.3GB)</option>
+          <option value="gemma2:2b">Gemma 2 2B (1.6GB)</option>
+          <option value="mistral">Mistral 7B (4.1GB)</option>
+          <option value="llama3">Llama 3 8B (4.7GB)</option>
+        </select>
+        <button class="act-btn" onclick="checkOllamaModels()" style="width:auto;padding:0 15px;" title="Проверить наличие">↻</button>
+      </div>
+      
+      <div id="ollamaModelStatus" class="act-hint" style="margin-bottom:10px;"></div>
+      
+      <!-- Прогресс загрузки -->
+      <div id="ollamaDownloadBlock" style="display:none;margin:15px 0;padding:15px;background:rgba(0,0,0,0.2);border-radius:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.85em;">
+          <span id="dlStatus">Загрузка модели...</span>
+          <span id="dlPercent" style="color:#f44336;font-weight:bold;">0%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border-radius:6px;height:8px;overflow:hidden;">
+          <div id="dlBar" style="background:linear-gradient(90deg,#f44336,#ff6e62);height:100%;width:0%;transition:width 0.3s ease;"></div>
+        </div>
+        <div id="dlSpeed" class="act-hint" style="margin-top:8px;font-size:0.75em;"></div>
+      </div>
+      
+      <button id="btnPullModel" class="act-btn" onclick="pullOllamaModel()" style="width:100%;margin-top:10px;background:rgba(244,67,54,0.2);color:#f44336;border:1px solid #f44336;">
+        ⬇️ Скачать выбранную модель
+      </button>
+      
+      <button class="act-btn" onclick="testOllama()" style="width:100%;margin-top:10px;">🔍 Проверить соединение</button>
+      <div id="ollamaStatus" class="act-hint" style="margin-top:10px;"></div>
+      
+      <div class="set-label" style="margin-top:20px;">Системный промпт</div>
+      <textarea id="systemPrompt" class="act-input" rows="3" style="width:100%;resize:vertical;" placeholder="Описание поведения ИИ...">Ты — умный помощник OnyX в стиле Nothing OS. Отвечай кратко, по делу и стильно на русском языке.</textarea>
     </div>
+
+    <!-- Тема оформления -->
     <div class="set-block">
-      <div class="set-label">Статус подписки</div>
-      <div class="sub-status" id="subStatus"><span class="st-dot"></span>Ограниченная версия</div>
-      <div class="sub-row"><span>Осталось запросов сегодня</span><b id="requestsLeft">10 / 10</b></div>
-      <div class="sub-row"><span>Действует до</span><b id="subUntil">—</b></div>
+      <div class="set-label">Тема оформления</div>
+      <select id="themeSelect" class="act-input" style="width:100%;" onchange="changeTheme(this.value)">
+        <option value="nothing">Nothing OS (Черный/Красный)</option>
+        <option value="light">Светлая</option>
+        <option value="dark">Тёмная</option>
+      </select>
     </div>
-    <div class="set-foot">
+
+    <div class="set-foot" style="margin-top:20px;">
       Создатель <b>CodeXY Labs ™</b> · <span class="dev-nick">LumiXeN</span><br>
       Защищено авторским правом команды CodeXY Labs ™ 2026
     </div>
+    
+    <button class="act-btn" onclick="saveSettings()" style="width:100%;margin-top:15px;background:#f44336;color:white;">💾 Сохранить настройки</button>
   </div>
 </div>
 <!-- ================= АДМИН-ПАНЕЛЬ ================= -->
@@ -5064,6 +5166,16 @@ function mergeLocal(parts){
 async function handleSend(raw){
   var text=String(raw||'').trim();
   if(!text||busy) return;
+  
+  // Проверка провайдера ИИ
+  var provider = localStorage.getItem('onyx_ai_provider') || 'huggingface';
+  
+  // Если выбран Ollama или HuggingFace — используем нейросеть напрямую для ULTIMATE/NOVA
+  if ((provider === 'ollama' || provider === 'huggingface') && isUltimateVersion(state.version)) {
+    await handleWithExternalAI(text, provider);
+    return;
+  }
+  
   if(!consumeRequest()) return;
   busy=true;
   var sendBtn=$('#send');
@@ -5235,6 +5347,163 @@ async function handleSend(raw){
     return;
   }
 }
+
+/* ---------------------- OLLAMA ИНТЕГРАЦИЯ ------------------- */
+async function sendToOllama(messages, onChunk) {
+  var url = localStorage.getItem('onyx_ollama_url') || 'http://localhost:11434';
+  var model = localStorage.getItem('onyx_ollama_model') || 'llama3.2';
+  var systemPrompt = localStorage.getItem('onyx_system_prompt') || 'Ты — умный помощник OnyX в стиле Nothing OS. Отвечай кратко, по делу и стильно на русском языке.';
+  
+  // Добавляем системный промпт в начало сообщений
+  var allMessages = [{ role: 'system', content: systemPrompt }].concat(messages);
+  
+  try {
+    var response = await fetch(url.replace(/\/$/, '') + '/api/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: model,
+        messages: allMessages,
+        stream: true
+      })
+    });
+    
+    if (!response.ok) throw new Error('Ошибка подключения к Ollama: ' + response.status);
+    
+    var reader = response.body.getReader();
+    var decoder = new TextDecoder();
+    
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+      
+      var chunk = decoder.decode(result.value);
+      var lines = chunk.split('\n').filter(function(line) { return line.trim(); });
+      
+      for (var i = 0; i < lines.length; i++) {
+        try {
+          var json = JSON.parse(lines[i]);
+          if (json.message && json.message.content) {
+            onChunk(json.message.content);
+          }
+        } catch (e) {}
+      }
+    }
+  } catch (err) {
+    throw err;
+  }
+}
+
+/* ---------------------- HUGGING FACE ИНТЕГРАЦИЯ ------------------- */
+async function sendToHuggingFace(prompt) {
+  var token = localStorage.getItem('onyx_hf_token') || '';
+  var model = localStorage.getItem('onyx_hf_model') || 'mistralai/Mistral-7B-Instruct-v0.3';
+  
+  if (!token) {
+    throw new Error('Требуется токен Hugging Face. Добавьте его в настройках.');
+  }
+  
+  var response = await fetch('https://api-inference.huggingface.co/models/' + model, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + token,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      inputs: prompt,
+      parameters: {
+        max_new_tokens: 512,
+        temperature: 0.7,
+        top_p: 0.95,
+        return_full_text: false
+      }
+    })
+  });
+  
+  if (!response.ok) {
+    var errData = await response.json().catch(function() { return {}; });
+    throw new Error(errData.error || 'Ошибка API Hugging Face');
+  }
+  
+  var data = await response.json();
+  return data[0]?.generated_text || '';
+}
+
+/* ---------------------- ОБРАБОТКА ВНЕШНИМ ИИ ------------------- */
+async function handleWithExternalAI(text, provider) {
+  if(!consumeRequest()) return;
+  busy=true;
+  var sendBtn=$('#send');
+  if(sendBtn) sendBtn.disabled=true;
+  hideWelcome();
+  chatEl().appendChild(buildUserMsg(text));
+  scrollChat();
+  var chat=currentChat();
+  if(chat){
+    chat.messages.push({role:'user',text:text});
+    if(chat.title==='Новый чат'){ chat.title=trimText(text,34); renderHistory(); }
+  }
+  var ui=addAiMessage();
+  
+  try {
+    // Показываем индикатор анализа
+    var stAnalysis = addStage(ui, provider === 'ollama' ? 'Ollama анализирует запрос…' : 'Нейросеть обрабатывает…');
+    
+    if (provider === 'ollama') {
+      // Формируем историю сообщений для контекста
+      var messages = [];
+      if (chat && chat.messages) {
+        for (var i = Math.max(0, chat.messages.length - 10); i < chat.messages.length; i++) {
+          var m = chat.messages[i];
+          if (m.role === 'user' || m.role === 'ai') {
+            messages.push({
+              role: m.role === 'ai' ? 'assistant' : 'user',
+              content: m.text
+            });
+          }
+        }
+      }
+      
+      doneStage(stAnalysis, true);
+      var stStream = addStage(ui, 'Потоковая передача ответа…');
+      
+      var fullResponse = '';
+      await sendToOllama(messages, function(chunk) {
+        fullResponse += chunk;
+        ui.content.textContent = fullResponse;
+        scrollChat();
+      });
+      
+      doneStage(stStream, true);
+      finish({sources:[]});
+    } else if (provider === 'huggingface') {
+      doneStage(stAnalysis, true);
+      var stGen = addStage(ui, 'Генерация ответа…');
+      
+      var prompt = 'Ты — умный помощник OnyX. Отвечай кратко и по делу на русском языке.\n\nВопрос: ' + text;
+      var response = await sendToHuggingFace(prompt);
+      
+      doneStage(stGen, true);
+      ui.content.textContent = response;
+      finish({sources:[]});
+    }
+  } catch (err) {
+    streamText(ui, 'Ошибка: ' + err.message + '. Проверьте настройки подключения.', function(){ finish(null); });
+  }
+  
+  function finish(extra) {
+    var c2 = currentChat();
+    if (c2) {
+      var rec = {role:'ai', text: ui.content.textContent || ''};
+      if (extra && extra.sources) rec.sources = extra.sources;
+      c2.messages.push(rec);
+      saveChats(); renderHistory();
+    }
+    busy = false;
+    var b = $('#send');
+    if (b) b.disabled = false;
+  }
+}
 /* ---------------------- ПРИМЕНЕНИЕ ВЕРСИИ ------------------- */
 function applyVersion(v){
   state.version=v;
@@ -5323,6 +5592,212 @@ function initApp(){
   $('#settingsBtn').addEventListener('click',function(){ renderSettings(); settingsModal.classList.add('open'); });
   $('#settingsClose').addEventListener('click',function(){ settingsModal.classList.remove('open'); });
   settingsModal.addEventListener('click',function(e){ if(e.target===settingsModal) settingsModal.classList.remove('open'); });
+  
+  // Функции для управления провайдерами
+  window.updateProviderUI = function() {
+    var provider = $('#aiProvider').value;
+    var hfSettings = $('#hfSettings');
+    var ollamaSettings = $('#ollamaSettings');
+    var hint = $('#providerHint');
+    
+    if (provider === 'huggingface') {
+      hfSettings.style.display = 'block';
+      ollamaSettings.style.display = 'none';
+      hint.textContent = 'Hugging Face работает в облаке. Требуется токен.';
+    } else if (provider === 'ollama') {
+      hfSettings.style.display = 'none';
+      ollamaSettings.style.display = 'block';
+      hint.textContent = 'Ollama требует запущенный локальный сервер.';
+    } else {
+      hfSettings.style.display = 'none';
+      ollamaSettings.style.display = 'none';
+      hint.textContent = 'Режим офлайн. Только поиск и база знаний.';
+    }
+  };
+  
+  window.checkOllamaModels = async function() {
+    var url = $('#ollamaUrl').value.replace(/\/$/, '');
+    var statusEl = $('#ollamaModelStatus');
+    
+    statusEl.innerHTML = '<span style="color:#ff9800;">⟡ Проверка моделей...</span>';
+    
+    try {
+      var response = await fetch(url + '/api/tags', { method: 'GET' });
+      if (!response.ok) throw new Error('Не удалось подключиться');
+      
+      var data = await response.json();
+      var models = data.models || [];
+      
+      if (models.length === 0) {
+        statusEl.innerHTML = '<span style="color:#ff9800;">⚠ Модели не найдены. Скачайте любую модель.</span>';
+        $('#btnPullModel').style.display = 'block';
+      } else {
+        var currentModel = $('#ollamaModelSelect').value;
+        var found = models.find(function(m) { return m.name.startsWith(currentModel); });
+        
+        if (found) {
+          statusEl.innerHTML = '<span style="color:#4caf50;">✓ Модель "' + currentModel + '" установлена</span>';
+          $('#btnPullModel').style.display = 'none';
+        } else {
+          statusEl.innerHTML = '<span style="color:#ff9800;">⚠ Модель не найдена. Доступны: ' + models.map(function(m){return m.name;}).join(', ') + '</span>';
+          $('#btnPullModel').style.display = 'block';
+        }
+      }
+    } catch (err) {
+      statusEl.innerHTML = '<span style="color:#f44336;">✗ Ошибка: ' + err.message + '</span>';
+    }
+  };
+  
+  window.pullOllamaModel = async function() {
+    var url = $('#ollamaUrl').value.replace(/\/$/, '');
+    var model = $('#ollamaModelSelect').value;
+    var downloadBlock = $('#ollamaDownloadBlock');
+    var dlBar = $('#dlBar');
+    var dlPercent = $('#dlPercent');
+    var dlStatus = $('#dlStatus');
+    var dlSpeed = $('#dlSpeed');
+    
+    downloadBlock.style.display = 'block';
+    dlBar.style.width = '0%';
+    dlPercent.textContent = '0%';
+    dlStatus.textContent = 'Подготовка к загрузке...';
+    dlSpeed.textContent = '';
+    
+    try {
+      var response = await fetch(url + '/api/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: model, stream: true })
+      });
+      
+      if (!response.ok) throw new Error('Ошибка загрузки');
+      
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+      
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        
+        for (var i = 0; i < lines.length; i++) {
+          try {
+            var json = JSON.parse(lines[i]);
+            if (json.status) {
+              dlStatus.textContent = json.status;
+              
+              if (json.completed && json.total) {
+                var percent = Math.round((json.completed / json.total) * 100);
+                dlBar.style.width = percent + '%';
+                dlPercent.textContent = percent + '%';
+                
+                if (json.completed_at) {
+                  var speed = (json.completed / 1024 / 1024).toFixed(1);
+                  dlSpeed.textContent = 'Загружено: ' + (json.completed / 1024 / 1024).toFixed(1) + ' MB';
+                }
+              }
+            }
+          } catch (e) {}
+        }
+      }
+      
+      dlStatus.textContent = '✓ Модель загружена!';
+      dlBar.style.width = '100%';
+      dlPercent.textContent = '100%';
+      dlSpeed.textContent = 'Готово к использованию';
+      
+      setTimeout(function() { downloadBlock.style.display = 'none'; }, 3000);
+      checkOllamaModels();
+      
+    } catch (err) {
+      dlStatus.textContent = '✗ Ошибка: ' + err.message;
+      dlBar.style.background = '#f44336';
+    }
+  };
+
+  window.testOllama = async function() {
+    var url = $('#ollamaUrl').value.replace(/\/$/, '');
+    var model = $('#ollamaModelSelect').value;
+    var statusEl = $('#ollamaStatus');
+    
+    statusEl.innerHTML = '<span style="color:#ff9800;">⟡ Проверка...</span>';
+    
+    try {
+      var response = await fetch(url + '/api/tags', { method: 'GET' });
+      if (!response.ok) throw new Error('Не удалось подключиться');
+      
+      var data = await response.json();
+      var models = data.models || [];
+      var found = models.find(function(m) { return m.name.startsWith(model); });
+      
+      if (found) {
+        statusEl.innerHTML = '<span style="color:#4caf50;">✓ Подключено! Модель: ' + found.name + '</span>';
+      } else {
+        statusEl.innerHTML = '<span style="color:#ff9800;">⚠ Сервер доступен, но модель "' + model + '" не найдена. Доступны: ' + models.map(function(m){return m.name;}).join(', ') + '</span>';
+      }
+    } catch (err) {
+      statusEl.innerHTML = '<span style="color:#f44336;">✗ Ошибка: ' + err.message + '. Запустите OLLAMA_ORIGINS="*" ollama serve</span>';
+    }
+  };
+  
+  window.saveSettings = function() {
+    var provider = $('#aiProvider').value;
+    var hfModel = $('#hfModel').value;
+    var hfToken = $('#hfToken').value.trim();
+    var ollamaUrl = $('#ollamaUrl').value.trim();
+    var ollamaModel = $('#ollamaModelSelect').value;
+    var systemPrompt = $('#systemPrompt').value.trim();
+    var theme = $('#themeSelect').value;
+    
+    localStorage.setItem('onyx_ai_provider', provider);
+    localStorage.setItem('onyx_hf_model', hfModel);
+    localStorage.setItem('onyx_hf_token', hfToken);
+    localStorage.setItem('onyx_ollama_url', ollamaUrl);
+    localStorage.setItem('onyx_ollama_model', ollamaModel);
+    localStorage.setItem('onyx_system_prompt', systemPrompt);
+    localStorage.setItem('onyx_theme', theme);
+    
+    settingsModal.classList.remove('open');
+    toast('Настройки сохранены');
+    
+    if (theme === 'light' || theme === 'dark') {
+      changeTheme(theme);
+    }
+  };
+  
+  window.changeTheme = function(theme) {
+    document.body.setAttribute('data-theme', theme);
+    localStorage.setItem('onyx_theme', theme);
+  };
+  
+  // Инициализация настроек при загрузке
+  (function initSettings() {
+    var savedProvider = localStorage.getItem('onyx_ai_provider') || 'huggingface';
+    var savedHfModel = localStorage.getItem('onyx_hf_model') || 'mistralai/Mistral-7B-Instruct-v0.3';
+    var savedHfToken = localStorage.getItem('onyx_hf_token') || '';
+    var savedOllamaUrl = localStorage.getItem('onyx_ollama_url') || 'http://localhost:11434';
+    var savedOllamaModel = localStorage.getItem('onyx_ollama_model') || 'llama3.2';
+    var savedSystemPrompt = localStorage.getItem('onyx_system_prompt') || 'Ты — умный помощник OnyX в стиле Nothing OS. Отвечай кратко, по делу и стильно на русском языке.';
+    var savedTheme = localStorage.getItem('onyx_theme') || 'nothing';
+    
+    $('#aiProvider').value = savedProvider;
+    $('#hfModel').value = savedHfModel;
+    $('#hfToken').value = savedHfToken;
+    $('#ollamaUrl').value = savedOllamaUrl;
+    $('#ollamaModelSelect').value = savedOllamaModel;
+    $('#systemPrompt').value = savedSystemPrompt;
+    $('#themeSelect').value = savedTheme;
+    
+    updateProviderUI();
+    if (savedTheme !== 'nothing') {
+      changeTheme(savedTheme);
+    }
+  })();
+  
   $('#activateBtn').addEventListener('click',activateCode);
   $('#activationCode').addEventListener('keydown',function(e){ if(e.key==='Enter') activateCode(); });
   $('#adminBtn').addEventListener('click',openAdmin);
