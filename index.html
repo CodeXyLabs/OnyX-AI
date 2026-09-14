@@ -1822,15 +1822,51 @@ body.sidebar-open .main{
 
     <!-- Настройки Ollama -->
     <div class="set-block" id="ollamaSettings" style="display:none;">
-      <div class="set-label">URL Сервера Ollama</div>
-      <input class="act-input" id="ollamaUrl" type="text" value="http://localhost:11434" style="width:100%;margin-bottom:10px;">
-      <div class="act-hint">Обычно http://localhost:11434</div>
+      <div class="act-hint" style="margin-bottom:15px;background:rgba(244,67,54,0.1);padding:10px;border-radius:8px;border-left:3px solid #f44336;">
+        <b>Как запустить:</b><br>
+        1. Установите <a href="https://ollama.com" target="_blank" style="color:#f44336;">Ollama</a><br>
+        2. Запустите: <code style="background:rgba(0,0,0,0.3);padding:2px 6px;border-radius:4px;">OLLAMA_ORIGINS="*" ollama serve</code><br>
+        3. Скачайте модель через кнопку ниже
+      </div>
       
-      <div class="set-label" style="margin-top:15px;">Имя модели</div>
-      <input class="act-input" id="ollamaModel" type="text" value="llama3" placeholder="llama3, mistral, gemma" style="width:100%;margin-bottom:10px;">
+      <div class="set-label">URL Сервера</div>
+      <input class="act-input" id="ollamaUrl" type="text" value="http://localhost:11434" style="width:100%;margin-bottom:10px;">
+      
+      <div class="set-label" style="margin-top:15px;">Модель</div>
+      <div style="display:flex;gap:8px;margin-bottom:10px;">
+        <select id="ollamaModelSelect" class="act-input" style="flex:1;">
+          <option value="llama3.2">Llama 3.2 (1.2GB) ⭐</option>
+          <option value="phi3">Phi-3 Mini (2.3GB)</option>
+          <option value="gemma2:2b">Gemma 2 2B (1.6GB)</option>
+          <option value="mistral">Mistral 7B (4.1GB)</option>
+          <option value="llama3">Llama 3 8B (4.7GB)</option>
+        </select>
+        <button class="act-btn" onclick="checkOllamaModels()" style="width:auto;padding:0 15px;" title="Проверить наличие">↻</button>
+      </div>
+      
+      <div id="ollamaModelStatus" class="act-hint" style="margin-bottom:10px;"></div>
+      
+      <!-- Прогресс загрузки -->
+      <div id="ollamaDownloadBlock" style="display:none;margin:15px 0;padding:15px;background:rgba(0,0,0,0.2);border-radius:12px;">
+        <div style="display:flex;justify-content:space-between;margin-bottom:8px;font-size:0.85em;">
+          <span id="dlStatus">Загрузка модели...</span>
+          <span id="dlPercent" style="color:#f44336;font-weight:bold;">0%</span>
+        </div>
+        <div style="background:rgba(255,255,255,0.1);border-radius:6px;height:8px;overflow:hidden;">
+          <div id="dlBar" style="background:linear-gradient(90deg,#f44336,#ff6e62);height:100%;width:0%;transition:width 0.3s ease;"></div>
+        </div>
+        <div id="dlSpeed" class="act-hint" style="margin-top:8px;font-size:0.75em;"></div>
+      </div>
+      
+      <button id="btnPullModel" class="act-btn" onclick="pullOllamaModel()" style="width:100%;margin-top:10px;background:rgba(244,67,54,0.2);color:#f44336;border:1px solid #f44336;">
+        ⬇️ Скачать выбранную модель
+      </button>
       
       <button class="act-btn" onclick="testOllama()" style="width:100%;margin-top:10px;">🔍 Проверить соединение</button>
       <div id="ollamaStatus" class="act-hint" style="margin-top:10px;"></div>
+      
+      <div class="set-label" style="margin-top:20px;">Системный промпт</div>
+      <textarea id="systemPrompt" class="act-input" rows="3" style="width:100%;resize:vertical;" placeholder="Описание поведения ИИ...">Ты — умный помощник OnyX в стиле Nothing OS. Отвечай кратко, по делу и стильно на русском языке.</textarea>
     </div>
 
     <!-- Тема оформления -->
@@ -5315,7 +5351,11 @@ async function handleSend(raw){
 /* ---------------------- OLLAMA ИНТЕГРАЦИЯ ------------------- */
 async function sendToOllama(messages, onChunk) {
   var url = localStorage.getItem('onyx_ollama_url') || 'http://localhost:11434';
-  var model = localStorage.getItem('onyx_ollama_model') || 'llama3';
+  var model = localStorage.getItem('onyx_ollama_model') || 'llama3.2';
+  var systemPrompt = localStorage.getItem('onyx_system_prompt') || 'Ты — умный помощник OnyX в стиле Nothing OS. Отвечай кратко, по делу и стильно на русском языке.';
+  
+  // Добавляем системный промпт в начало сообщений
+  var allMessages = [{ role: 'system', content: systemPrompt }].concat(messages);
   
   try {
     var response = await fetch(url.replace(/\/$/, '') + '/api/chat', {
@@ -5323,12 +5363,12 @@ async function sendToOllama(messages, onChunk) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: model,
-        messages: messages,
+        messages: allMessages,
         stream: true
       })
     });
     
-    if (!response.ok) throw new Error('Ошибка подключения к Ollama');
+    if (!response.ok) throw new Error('Ошибка подключения к Ollama: ' + response.status);
     
     var reader = response.body.getReader();
     var decoder = new TextDecoder();
@@ -5575,15 +5615,114 @@ function initApp(){
     }
   };
   
+  window.checkOllamaModels = async function() {
+    var url = $('#ollamaUrl').value.replace(/\/$/, '');
+    var statusEl = $('#ollamaModelStatus');
+    
+    statusEl.innerHTML = '<span style="color:#ff9800;">⟡ Проверка моделей...</span>';
+    
+    try {
+      var response = await fetch(url + '/api/tags', { method: 'GET' });
+      if (!response.ok) throw new Error('Не удалось подключиться');
+      
+      var data = await response.json();
+      var models = data.models || [];
+      
+      if (models.length === 0) {
+        statusEl.innerHTML = '<span style="color:#ff9800;">⚠ Модели не найдены. Скачайте любую модель.</span>';
+        $('#btnPullModel').style.display = 'block';
+      } else {
+        var currentModel = $('#ollamaModelSelect').value;
+        var found = models.find(function(m) { return m.name.startsWith(currentModel); });
+        
+        if (found) {
+          statusEl.innerHTML = '<span style="color:#4caf50;">✓ Модель "' + currentModel + '" установлена</span>';
+          $('#btnPullModel').style.display = 'none';
+        } else {
+          statusEl.innerHTML = '<span style="color:#ff9800;">⚠ Модель не найдена. Доступны: ' + models.map(function(m){return m.name;}).join(', ') + '</span>';
+          $('#btnPullModel').style.display = 'block';
+        }
+      }
+    } catch (err) {
+      statusEl.innerHTML = '<span style="color:#f44336;">✗ Ошибка: ' + err.message + '</span>';
+    }
+  };
+  
+  window.pullOllamaModel = async function() {
+    var url = $('#ollamaUrl').value.replace(/\/$/, '');
+    var model = $('#ollamaModelSelect').value;
+    var downloadBlock = $('#ollamaDownloadBlock');
+    var dlBar = $('#dlBar');
+    var dlPercent = $('#dlPercent');
+    var dlStatus = $('#dlStatus');
+    var dlSpeed = $('#dlSpeed');
+    
+    downloadBlock.style.display = 'block';
+    dlBar.style.width = '0%';
+    dlPercent.textContent = '0%';
+    dlStatus.textContent = 'Подготовка к загрузке...';
+    dlSpeed.textContent = '';
+    
+    try {
+      var response = await fetch(url + '/api/pull', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: model, stream: true })
+      });
+      
+      if (!response.ok) throw new Error('Ошибка загрузки');
+      
+      var reader = response.body.getReader();
+      var decoder = new TextDecoder();
+      var buffer = '';
+      
+      while (true) {
+        var chunk = await reader.read();
+        if (chunk.done) break;
+        
+        buffer += decoder.decode(chunk.value, { stream: true });
+        var lines = buffer.split('\n');
+        buffer = lines.pop();
+        
+        for (var i = 0; i < lines.length; i++) {
+          try {
+            var json = JSON.parse(lines[i]);
+            if (json.status) {
+              dlStatus.textContent = json.status;
+              
+              if (json.completed && json.total) {
+                var percent = Math.round((json.completed / json.total) * 100);
+                dlBar.style.width = percent + '%';
+                dlPercent.textContent = percent + '%';
+                
+                if (json.completed_at) {
+                  var speed = (json.completed / 1024 / 1024).toFixed(1);
+                  dlSpeed.textContent = 'Загружено: ' + (json.completed / 1024 / 1024).toFixed(1) + ' MB';
+                }
+              }
+            }
+          } catch (e) {}
+        }
+      }
+      
+      dlStatus.textContent = '✓ Модель загружена!';
+      dlBar.style.width = '100%';
+      dlPercent.textContent = '100%';
+      dlSpeed.textContent = 'Готово к использованию';
+      
+      setTimeout(function() { downloadBlock.style.display = 'none'; }, 3000);
+      checkOllamaModels();
+      
+    } catch (err) {
+      dlStatus.textContent = '✗ Ошибка: ' + err.message;
+      dlBar.style.background = '#f44336';
+    }
+  };
+
   window.testOllama = async function() {
     var url = $('#ollamaUrl').value.replace(/\/$/, '');
-    var model = $('#ollamaModel').value.trim();
+    var model = $('#ollamaModelSelect').value;
     var statusEl = $('#ollamaStatus');
-    
-    if (!model) {
-      statusEl.innerHTML = '<span style="color:#f44336;">⚠ Введите имя модели</span>';
-      return;
-    }
     
     statusEl.innerHTML = '<span style="color:#ff9800;">⟡ Проверка...</span>';
     
@@ -5601,7 +5740,7 @@ function initApp(){
         statusEl.innerHTML = '<span style="color:#ff9800;">⚠ Сервер доступен, но модель "' + model + '" не найдена. Доступны: ' + models.map(function(m){return m.name;}).join(', ') + '</span>';
       }
     } catch (err) {
-      statusEl.innerHTML = '<span style="color:#f44336;">✗ Ошибка: ' + err.message + '. Проверьте URL и CORS.</span>';
+      statusEl.innerHTML = '<span style="color:#f44336;">✗ Ошибка: ' + err.message + '. Запустите OLLAMA_ORIGINS="*" ollama serve</span>';
     }
   };
   
@@ -5610,7 +5749,8 @@ function initApp(){
     var hfModel = $('#hfModel').value;
     var hfToken = $('#hfToken').value.trim();
     var ollamaUrl = $('#ollamaUrl').value.trim();
-    var ollamaModel = $('#ollamaModel').value.trim();
+    var ollamaModel = $('#ollamaModelSelect').value;
+    var systemPrompt = $('#systemPrompt').value.trim();
     var theme = $('#themeSelect').value;
     
     localStorage.setItem('onyx_ai_provider', provider);
@@ -5618,6 +5758,7 @@ function initApp(){
     localStorage.setItem('onyx_hf_token', hfToken);
     localStorage.setItem('onyx_ollama_url', ollamaUrl);
     localStorage.setItem('onyx_ollama_model', ollamaModel);
+    localStorage.setItem('onyx_system_prompt', systemPrompt);
     localStorage.setItem('onyx_theme', theme);
     
     settingsModal.classList.remove('open');
@@ -5639,14 +5780,16 @@ function initApp(){
     var savedHfModel = localStorage.getItem('onyx_hf_model') || 'mistralai/Mistral-7B-Instruct-v0.3';
     var savedHfToken = localStorage.getItem('onyx_hf_token') || '';
     var savedOllamaUrl = localStorage.getItem('onyx_ollama_url') || 'http://localhost:11434';
-    var savedOllamaModel = localStorage.getItem('onyx_ollama_model') || 'llama3';
+    var savedOllamaModel = localStorage.getItem('onyx_ollama_model') || 'llama3.2';
+    var savedSystemPrompt = localStorage.getItem('onyx_system_prompt') || 'Ты — умный помощник OnyX в стиле Nothing OS. Отвечай кратко, по делу и стильно на русском языке.';
     var savedTheme = localStorage.getItem('onyx_theme') || 'nothing';
     
     $('#aiProvider').value = savedProvider;
     $('#hfModel').value = savedHfModel;
     $('#hfToken').value = savedHfToken;
     $('#ollamaUrl').value = savedOllamaUrl;
-    $('#ollamaModel').value = savedOllamaModel;
+    $('#ollamaModelSelect').value = savedOllamaModel;
+    $('#systemPrompt').value = savedSystemPrompt;
     $('#themeSelect').value = savedTheme;
     
     updateProviderUI();
