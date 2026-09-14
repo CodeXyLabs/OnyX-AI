@@ -1,8 +1,12 @@
+```
 # Compiled and build artifacts
 *.pyc
 __pycache__/
 *.o
 *.obj
+dist/
+build/
+target/
 *.class
 *.exe
 *.dll
@@ -11,15 +15,12 @@ __pycache__/
 *.out
 
 # Dependencies
+node_modules/
 .venv/
 venv/
-node_modules/
-dist/
-build/
-target/
-.gradle/
-.mypy_cache/
-.pytest_cache/
+.env
+.env.local
+.env.*
 
 # Logs and temp files
 *.log
@@ -27,14 +28,11 @@ target/
 *.swp
 *.swo
 
-# Environment
-.env
-.env.local
-*.env.*
-
 # Editors
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # System files
 .DS_Store
@@ -68,3 +66,122 @@ htmlcov/
 *.tar.bz2
 *.tar.xz
 *.tar.zst
+
+# Python specific
+*.pyc
+__pycache__/
+*.pyo
+*.pyd
+.Python
+*.so
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+
+# Node.js specific
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+node_modules/
+jspm_packages/
+
+# Java specific
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# C/C++ specific
+*.o
+*.a
+*.so
+*.dll
+*.exe
+*.out
+*.obj
+*.ilk
+*.pdb
+*.gch
+*.gcb
+*.stackdump
+
+# Go specific
+*.o
+*.a
+*.swp
+*~
+._*
+.DS_Store
+.svn
+.hg
+.git
+*.orig
+*.bak
+*.tmp
+*~
+\#*\#
+*.log
+*.out
+*.exe
+*.dll
+*.so
+*.dylib
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.pyc
+*.pyo
+*.pyd
+*.so
+*.egg-info
+.eggs
+.build
+dist
+build
+*.egg
+*.pyc
+*.pyo
+*.pyd
+*.so
+.coverage
+.coverage.*
+.cache
+.pytest_cache/
+.mypy_cache/
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.npm
+.yarn-integrity
+jspm_packages/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+*.o
+*.a
+*.so
+*.dll
+*.exe
+*.out
+*.obj
+*.ilk
+*.pdb
+*.gch
+*.gcb
+*.stackdump
+```
