@@ -1,12 +1,12 @@
-# OnyX 4.1 ULTIMATE · Nothing style
+# OnyX Ai · by CodeXy™ Labs
 
 <div align="center">
 
-**OnyX** — интеллектуальный AI-ассистент в стиле Nothing OS с минималистичным дизайном, плавными анимациями и поддержкой нескольких провайдеров ИИ.
+**OnyX** — интеллектуальный AI-ассистент с минималистичным дизайном, плавными анимациями и поддержкой нескольких провайдеров ИИ.
 
 ![Версия](https://img.shields.io/badge/версия-4.1%20ULTIMATE-red)
 ![Лицензия](https://img.shields.io/badge/лицензия-Proprietary-lightgrey)
-![Стиль](https://img.shields.io/badge/стиль-Nothing%20OS-black)
+![Стиль](https://img.shields.io/badge/стиль-%20OS-black)
 
 </div>
 
