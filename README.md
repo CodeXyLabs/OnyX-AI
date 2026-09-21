@@ -4,7 +4,7 @@
 
 **OnyX** — интеллектуальный AI-ассистент с минималистичным дизайном, плавными анимациями и поддержкой нескольких провайдеров ИИ.
 
-![Версия](https://img.shields.io/badge/версия-4.1%20ULTIMATE-red)
+![Версия](https://img.shields.io/badge/версия-4.3%20NOVA-red)
 ![Лицензия](https://img.shields.io/badge/лицензия-Proprietary-lightgrey)
 
 </div>
