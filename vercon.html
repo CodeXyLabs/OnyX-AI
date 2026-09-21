@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>OnyX NOVA · CodeXY Labs ™</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Doto:wght@600;700;900&family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:#050505;--bg2:#0a0a0a;--bg3:#0f0f0f;--bg4:#141414;
+--ink:#f5f5f5;--ink2:#cfcfcf;--ink3:#8f8f8f;--ink4:#5c5c5c;--ink5:#3a3a3a;
+--line:rgba(255,255,255,.1);--line2:rgba(255,255,255,.06);
+--red:#ff2b1f;--red2:rgba(255,43,31,.14);--red3:rgba(255,43,31,.4);
+--green:#7fff9f;--blue:#8fd7ff;--yellow:#ffcc88;--purple:#c9a5ff;--orange:#ff9d5f;
+--fontD:'Doto','Space Grotesk',sans-serif;
+--fontUI:'Space Grotesk',system-ui,sans-serif;
+--fontM:'JetBrains Mono',ui-monospace,Consolas,monospace;
+--r:22px;--rM:16px;--rS:10px;
+--sp:.2s;--ease:cubic-bezier(.22,1,.36,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+*::before,*::after{box-sizing:inherit}
+html{height:100%;-webkit-text-size-adjust:100%}
+body{height:100%;height:100dvh;background:var(--bg);color:var(--ink);font-family:var(--fontUI);font-size:14.5px;line-height:1.55;overflow:hidden;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+::selection{background:rgba(255,43,31,.35);color:#fff}
+::-webkit-scrollbar{width:7px;height:7px}
+::-webkit-scrollbar-thumb{background:rgba(255,43,31,.35);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,43,31,.55)}
+::-webkit-scrollbar-track{background:transparent}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,43,31,.35) transparent}
+button{font-family:inherit;color:inherit;background:none;border:none;cursor:pointer;font-size:inherit}
+input,textarea,select{font-family:inherit;color:inherit;background:none;border:none;outline:none}
+img{display:block;max-width:100%}
+a{color:inherit;text-decoration:none}
+h1,h2,h3,h4{font-weight:600;line-height:1.3}
+#dotField{position:fixed;inset:0;z-index:0;display:block;width:100%;height:100%;pointer-events:none}
+.vignette{position:fixed;inset:0;z-index:1;pointer-events:none;background:radial-gradient(120% 90% at 50% 0%,rgba(255,43,31,.05) 0%,rgba(255,43,31,0) 45%),radial-gradient(140% 120% at 50% 110%,rgba(0,0,0,.75) 0%,rgba(0,0,0,0) 55%)}
+.noise{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.045;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.6'/%3E%3C/svg%3E")}
+.glass{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.075) 0%,rgba(255,255,255,.035) 55%,rgba(255,43,31,.04) 100%);-webkit-backdrop-filter:blur(24px) saturate(160%);backdrop-filter:blur(24px) saturate(160%);border:1px solid var(--line);box-shadow:0 20px 55px rgba(0,0,0,.55),inset 0 1px 0 rgba(255,255,255,.11);overflow:hidden}
+.glass::after{content:'';position:absolute;top:0;left:8%;right:8%;height:1px;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(255,80,70,.5),rgba(255,255,255,.35),transparent);opacity:.7}
+.app{position:relative;z-index:2;display:flex;height:100%;gap:12px;padding:max(12px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-bottom)) 12px 12px}
+.sidebar{width:300px;min-width:300px;border-radius:var(--r);display:flex;flex-direction:column;animation:panelIn .6s var(--ease) both}
+.side-head{display:flex;align-items:center;gap:6px;padding:14px 14px 10px;border-bottom:1px solid var(--line2)}
+.side-title{font-family:var(--fontD);font-weight:900;font-size:18px;letter-spacing:.08em;flex:1;color:var(--ink)}
+.icon-btn{width:34px;height:34px;min-width:34px;border-radius:10px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink2);border:1px solid transparent;font-size:14px;transition:all var(--sp) var(--ease)}
+.icon-btn:hover{color:var(--ink);background:rgba(255,255,255,.08);border-color:var(--line)}
+.icon-btn:active{transform:scale(.94)}
+.icon-btn.red{color:#fff;background:var(--red2);border-color:var(--red3)}
+.icon-btn.red:hover{background:rgba(255,43,31,.28);box-shadow:0 0 14px rgba(255,43,31,.35)}
+.history-list{flex:1;overflow-y:auto;padding:10px 8px;display:flex;flex-direction:column;gap:4px}
+.history-empty{padding:22px 12px;text-align:center;color:var(--ink3);font-size:12px;font-family:var(--fontM);border:1px dashed var(--line2);border-radius:var(--rS);margin:4px}
+.history-item{display:flex;align-items:center;gap:9px;padding:10px 11px;border-radius:var(--rS);border:1px solid transparent;color:var(--ink2);cursor:pointer;transition:all var(--sp) var(--ease)}
+.history-item:hover{background:rgba(255,255,255,.05);border-color:var(--line2);color:var(--ink);transform:translateX(2px)}
+.history-item.active{background:linear-gradient(135deg,rgba(255,43,31,.16),rgba(255,255,255,.05));border-color:rgba(255,43,31,.45);color:var(--ink)}
+.history-dot{width:6px;height:6px;min-width:6px;border-radius:50%;background:var(--ink);box-shadow:0 0 8px rgba(255,255,255,.7)}
+.history-item.active .history-dot{background:var(--red);box-shadow:0 0 10px rgba(255,43,31,.7)}
+.history-title{flex:1;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.history-del{opacity:0;width:24px;height:24px;min-width:24px;border-radius:7px;color:var(--ink3);font-size:11px;display:inline-flex;align-items:center;justify-content:center;transition:all var(--sp) ease}
+.history-item:hover .history-del{opacity:1}
+.history-del:hover{color:#fff;background:var(--red)}
+.wm-panel{margin:0 8px 8px;padding:8px 10px;background:rgba(0,0,0,.3);border-radius:var(--rS);border:1px dashed var(--line2);font-family:var(--fontM);font-size:10px;color:var(--ink3)}
+.wm-title{color:var(--ink2);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;margin-bottom:5px}
+.wm-item{display:inline-block;padding:2px 7px;border-radius:999px;background:rgba(201,165,255,.1);border:1px solid rgba(201,165,255,.25);color:var(--purple);margin:2px 3px 2px 0;font-size:9.5px}
+.brain-panel{padding:12px 14px;border-top:1px solid var(--line2);font-family:var(--fontM);font-size:10.5px;color:var(--ink3);line-height:1.7}
+.brain-panel .row{display:flex;justify-content:space-between;margin-bottom:3px}
+.brain-panel .row b{color:var(--ink);font-weight:500;font-variant-numeric:tabular-nums}
+.brain-panel .row b.green{color:var(--green)}
+.brain-panel .row b.blue{color:var(--blue)}
+.brain-panel .row b.yellow{color:var(--yellow)}
+.side-foot{padding:12px 14px;border-top:1px solid var(--line2);display:flex;flex-direction:column;gap:4px}
+.creator{font-size:11.5px;color:var(--ink3);font-family:var(--fontM)}
+.creator b{color:var(--ink);letter-spacing:.05em}
+.creator .nick{color:var(--red)}
+.copy{font-size:10px;color:var(--ink4);font-family:var(--fontM);line-height:1.5}
+.main{flex:1;display:flex;flex-direction:column;gap:12px;min-width:0}
+.topbar{border-radius:var(--r);display:flex;align-items:center;gap:10px;padding:11px 14px;animation:panelIn .6s .08s var(--ease) both}
+.menu-btn{display:none}
+.brand{display:flex;align-items:center;gap:9px;min-width:0}
+.brand-dot{width:9px;height:9px;min-width:9px;border-radius:50%;background:var(--red);box-shadow:0 0 12px rgba(255,43,31,.7),0 0 30px rgba(255,43,31,.25);animation:pulse 2.4s ease-in-out infinite}
+.brand-name{font-family:var(--fontD);font-weight:900;font-size:22px;letter-spacing:.1em;color:var(--ink);text-shadow:0 0 20px rgba(255,43,31,.3)}
+.brand-ver{font-family:var(--fontM);font-size:10.5px;color:var(--ink3);padding:3px 8px;border:1px solid var(--line2);border-radius:999px;background:rgba(255,255,255,.04)}
+.brand-ver.ultimate{color:#fff;border-color:var(--red);background:linear-gradient(135deg,rgba(255,43,31,.32),rgba(215,25,33,.18));box-shadow:0 0 18px rgba(255,43,31,.35)}
+.tagline{flex:1;text-align:center;font-family:var(--fontM);font-size:11.5px;color:var(--ink3);letter-spacing:.03em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tagline .live{display:inline-block;width:5px;height:5px;border-radius:50%;background:var(--red);box-shadow:0 0 8px rgba(255,43,31,.8);margin-right:7px;vertical-align:1px;animation:pulse 1.6s ease-in-out infinite}
+.top-actions{display:flex;align-items:center;gap:6px;margin-left:auto}
+.tbtn{display:inline-flex;align-items:center;gap:7px;padding:8px 12px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.06);font-family:var(--fontM);font-size:11.5px;color:var(--ink2);white-space:nowrap;transition:all var(--sp) var(--ease)}
+.tbtn:hover{color:var(--ink);background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.tbtn .vdot{width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 8px rgba(255,43,31,.7);animation:pulse 2.2s ease-in-out infinite}
+.tbtn .arrow{font-size:9px;color:var(--ink3)}
+.chat{flex:1;border-radius:var(--r);overflow-y:auto;overflow-x:hidden;padding:22px 22px 18px;display:flex;flex-direction:column;gap:16px;scrollbar-width:thin;animation:panelIn .6s .14s var(--ease) both}
+.welcome{margin:auto;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center;padding:24px 12px;max-width:640px;animation:welcomeIn .8s var(--ease) both}
+@keyframes welcomeIn{from{opacity:0;transform:translateY(24px) scale(.96);filter:blur(6px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+.welcome-logo{font-family:var(--fontD);font-weight:900;font-size:clamp(42px,8vw,80px);letter-spacing:.14em;color:var(--ink);animation:logoGlow 4s ease-in-out infinite}
+@keyframes logoGlow{0%,100%{text-shadow:0 0 24px rgba(255,255,255,.25),0 0 55px rgba(255,43,31,.2)}50%{text-shadow:0 0 44px rgba(255,255,255,.5),0 0 85px rgba(255,43,31,.4)}}
+.welcome-tag{font-family:var(--fontM);font-size:12.5px;color:var(--ink3);display:inline-flex;align-items:center;gap:9px;padding:7px 14px;border-radius:999px;border:1px solid rgba(255,43,31,.32);background:rgba(255,43,31,.06)}
+.welcome-tag .wdot{width:5px;height:5px;border-radius:50%;background:var(--red);box-shadow:0 0 8px rgba(255,43,31,.8);animation:pulse 1.8s ease-in-out infinite}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin-top:8px}
+.chip{padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink2);font-size:12.5px;transition:all var(--sp) var(--ease);animation:fadeUp .5s var(--ease) both}
+.chip:hover{color:var(--ink);background:rgba(255,43,31,.12);border-color:rgba(255,43,31,.45);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 16px rgba(255,43,31,.18)}
+.chip:active{transform:scale(.96)}
+.msg{display:flex;gap:10px;max-width:860px;animation:msgIn .45s var(--ease) both}
+@keyframes msgIn{from{opacity:0;transform:translateY(14px) scale(.98);filter:blur(3px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+.msg.user{align-self:flex-end;flex-direction:row-reverse}
+.avatar{width:36px;height:36px;min-width:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);background:rgba(255,255,255,.07);box-shadow:inset 0 1px 0 rgba(255,255,255,.13)}
+.avatar .adot{width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 10px rgba(255,43,31,.7);animation:pulse 2.2s ease-in-out infinite}
+.msg.user .avatar{background:rgba(255,255,255,.1)}
+.msg.user .avatar .adot{background:#fff;box-shadow:0 0 10px rgba(255,255,255,.85)}
+.bubble{position:relative;border-radius:18px;padding:13px 16px;max-width:100%;min-width:60px;border:1px solid var(--line);background:rgba(255,255,255,.06);-webkit-backdrop-filter:blur(14px) saturate(150%);backdrop-filter:blur(14px) saturate(150%);box-shadow:0 10px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.09);overflow:hidden}
+.msg.user .bubble{background:rgba(255,43,31,.11);border-color:rgba(255,43,31,.32)}
+.bubble .meta{display:flex;align-items:center;gap:7px;margin-bottom:6px;font-family:var(--fontM);font-size:10px;color:var(--ink3);letter-spacing:.04em}
+.msg.user .bubble .meta{justify-content:flex-end}
+.meta .mver{padding:2px 7px;border-radius:999px;border:1px solid rgba(255,43,31,.3);background:rgba(255,43,31,.08);color:var(--ink2)}
+.content{font-size:14px;color:var(--ink);white-space:pre-wrap;word-break:break-word;line-height:1.65}
+.content b,.content strong{color:var(--ink)}
+.content .code{font-family:var(--fontM);font-size:12.5px;background:rgba(255,43,31,.1);border:1px solid rgba(255,43,31,.28);padding:1px 6px;border-radius:6px}
+.reasoning{list-style:none;display:flex;flex-direction:column;gap:6px;margin-bottom:12px;padding:10px 12px;background:rgba(0,0,0,.28);border-radius:var(--rM);border:1px solid var(--line2)}
+.rstage{display:flex;align-items:flex-start;gap:9px;font-family:var(--fontM);font-size:11px;color:var(--ink3);animation:fadeUp .35s var(--ease) both}
+.rstage .icon{width:14px;height:14px;min-width:14px;border-radius:50%;border:1.5px solid rgba(255,255,255,.28);border-top-color:var(--red);animation:spin .85s linear infinite;margin-top:1px}
+.rstage.done .icon{border:none;background:var(--red);box-shadow:0 0 8px rgba(255,43,31,.6);animation:none;position:relative}
+.rstage.done .icon::after{content:'';position:absolute;left:4.5px;top:3px;width:3px;height:6px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(42deg)}
+.rstage.warn .icon{border:none;background:var(--yellow);box-shadow:0 0 8px rgba(255,204,136,.5);animation:none}
+.rstage .lbl{flex:1;line-height:1.5}
+.rstage .lbl b{color:var(--ink2);font-weight:500}
+.rstage.done .lbl{color:var(--ink2)}
+@keyframes spin{to{transform:rotate(360deg)}}
+.sources{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.src-chip{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;border:1px solid rgba(255,43,31,.28);background:rgba(255,43,31,.07);font-family:var(--fontM);font-size:10px;color:var(--ink2);text-decoration:none;transition:all var(--sp) var(--ease)}
+.src-chip:hover{color:var(--ink);background:rgba(255,43,31,.18);transform:translateY(-1px)}
+.src-chip .sdot{width:4px;height:4px;border-radius:50%;background:var(--red);box-shadow:0 0 6px rgba(255,43,31,.7)}
+.tokens{margin-top:10px;padding-top:9px;border-top:1px dashed rgba(255,255,255,.09);font-family:var(--fontM);font-size:11px;color:var(--ink3);letter-spacing:.02em;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.tokens .t-block{display:inline-flex;align-items:center;gap:4px;white-space:nowrap}
+.tokens .t-block b{color:var(--ink);font-weight:600;font-variant-numeric:tabular-nums}
+.tokens .t-sep{color:var(--ink5);user-select:none}
+.tokens .t-tok{color:var(--blue)}
+.tokens .t-tok b{color:#c9e9ff}
+.tokens .t-cost{color:var(--green)}
+.tokens .t-cost b{color:#c8ffd8}
+.tokens .t-in{color:var(--ink3)}
+.tokens .t-out{color:var(--orange)}
+.tokens .t-think{color:var(--purple)}
+.msg.user .tokens{border-top-color:rgba(255,255,255,.15)}
+.typing{display:inline-flex;gap:5px;padding:3px 1px}
+.typing span{width:6px;height:6px;border-radius:50%;background:var(--red);box-shadow:0 0 7px rgba(255,43,31,.7);animation:tDot 1.15s ease-in-out infinite}
+.typing span:nth-child(2){animation-delay:.15s}
+.typing span:nth-child(3){animation-delay:.3s}
+@keyframes tDot{0%,100%{transform:translateY(0);opacity:.4}50%{transform:translateY(-5px);opacity:1}}
+.ai-image-wrap{margin-top:12px;border-radius:14px;overflow:hidden;border:1px solid rgba(255,43,31,.35);position:relative;background:rgba(0,0,0,.4);max-width:460px}
+.ai-image-wrap.loading{aspect-ratio:1/1;max-width:340px}
+.ai-image-wrap.loading::after{content:attr(data-loading);position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--fontM);font-size:11px;color:var(--ink3);background:linear-gradient(100deg,transparent 30%,rgba(255,43,31,.15) 50%,transparent 70%);background-size:200% 100%;animation:shimmer 1.6s linear infinite;text-align:center;padding:16px}
+@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+.ai-image-wrap img{width:100%;height:auto;animation:imgIn .8s var(--ease) both;cursor:pointer}
+@keyframes imgIn{from{opacity:0;transform:scale(1.04);filter:blur(10px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+.ai-image-wrap .img-err{padding:16px;font-family:var(--fontM);font-size:11.5px;color:var(--ink3);text-align:center;line-height:1.6}
+.ai-image-wrap .img-err b{color:#ff8f8f;display:block;margin-bottom:6px}
+.reasoning-bar{display:flex;justify-content:center;padding:0 4px;animation:panelIn .6s .18s var(--ease) both}
+.rbar-btn{display:inline-flex;align-items:center;gap:8px;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);font-family:var(--fontM);font-size:11px;color:var(--ink2);transition:all var(--sp) var(--ease)}
+.rbar-btn:hover{color:var(--ink);background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.rbar-btn.on{color:var(--ink);border-color:rgba(255,43,31,.5);background:var(--red2);box-shadow:0 0 14px rgba(255,43,31,.22)}
+.rbar-btn .rdot{width:6px;height:6px;min-width:6px;border-radius:50%;background:var(--ink4);transition:background .3s}
+.rbar-btn.on .rdot{background:var(--red);box-shadow:0 0 8px rgba(255,43,31,.7)}
+.composer{border-radius:var(--r);padding:11px 13px 9px;animation:panelIn .6s .2s var(--ease) both}
+.composer-inner{display:flex;align-items:flex-end;gap:9px}
+.composer textarea{flex:1;resize:none;max-height:140px;min-height:22px;line-height:1.5;padding:8px 6px;font-size:14px;color:var(--ink);scrollbar-width:thin}
+.composer textarea::placeholder{color:var(--ink4)}
+.send-btn{width:42px;height:42px;min-width:42px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;color:#fff;background:var(--red);font-size:15px;transition:all var(--sp) var(--ease);box-shadow:0 6px 20px rgba(255,43,31,.45),inset 0 0 0 1px rgba(255,255,255,.15)}
+.send-btn:hover{transform:translateY(-2px) scale(1.03);box-shadow:0 10px 28px rgba(255,43,31,.55),0 0 24px rgba(255,43,31,.45)}
+.send-btn:active{transform:scale(.92)}
+.send-btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+.img-btn{width:42px;height:42px;min-width:42px;border-radius:14px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink2);background:rgba(255,255,255,.06);border:1px solid var(--line);font-size:15px;transition:all var(--sp) var(--ease)}
+.img-btn:hover{color:var(--ink);background:rgba(255,43,31,.15);border-color:rgba(255,43,31,.4);transform:translateY(-2px)}
+.img-btn.on{color:#fff;background:var(--red2);border-color:var(--red3);box-shadow:0 0 14px rgba(255,43,31,.28);animation:pulse 2s infinite}
+.composer-hint{margin-top:7px;text-align:center;font-family:var(--fontM);font-size:9.5px;color:var(--ink4);letter-spacing:.03em}
+.composer-hint b{color:var(--orange)}
+.mover{position:fixed;inset:0;z-index:200;display:flex;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.65);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px);opacity:0;pointer-events:none;transition:opacity .4s var(--ease)}
+.mover.open{opacity:1;pointer-events:auto}
+.modal{width:min(640px,100%);max-height:min(88vh,760px);overflow-y:auto;border-radius:var(--r);padding:22px;transform:translateY(24px) scale(.96);filter:blur(5px);transition:all .4s var(--ease)}
+.modal.wide{width:min(760px,100%)}
+.mover.open .modal{transform:translateY(0) scale(1);filter:blur(0)}
+.mhead{display:flex;align-items:center;gap:9px;margin-bottom:16px}
+.mtitle{flex:1;font-family:var(--fontD);font-weight:900;font-size:20px;letter-spacing:.06em;color:var(--ink)}
+.mclose{width:32px;height:32px;min-width:32px;border-radius:10px;border:1px solid var(--line2);color:var(--ink3);display:inline-flex;align-items:center;justify-content:center;transition:all var(--sp) var(--ease)}
+.mclose:hover{color:var(--ink);background:rgba(255,43,31,.22);border-color:rgba(255,43,31,.45);transform:rotate(90deg)}
+.mblock{border-radius:var(--rM);border:1px solid var(--line2);background:rgba(255,255,255,.04);padding:14px 16px;margin-bottom:10px}
+.mlabel{font-family:var(--fontM);font-size:10.5px;letter-spacing:.1em;color:var(--ink3);text-transform:uppercase;margin-bottom:10px}
+.vcard{position:relative;border-radius:var(--rM);border:1px solid var(--line2);background:rgba(255,255,255,.04);padding:14px 16px;margin-bottom:10px;cursor:pointer;overflow:hidden;transition:all var(--sp) var(--ease)}
+.vcard:hover{background:rgba(255,255,255,.09);border-color:var(--line);transform:translateY(-2px)}
+.vcard.selected{border-color:rgba(255,255,255,.4);background:rgba(255,255,255,.1);box-shadow:0 0 0 1px rgba(255,255,255,.3) inset}
+.vcard.selected::after{content:'АКТИВНА';position:absolute;top:12px;right:12px;font-family:var(--fontM);font-size:9px;letter-spacing:.12em;color:#000;background:#fff;border-radius:999px;padding:3px 9px}
+.vcard.ultimate{border-color:rgba(255,43,31,.3);background:linear-gradient(160deg,rgba(255,43,31,.08),rgba(255,255,255,.04))}
+.vcard.ultimate.selected{border-color:var(--red);box-shadow:0 0 0 1px var(--red) inset,0 0 30px rgba(255,43,31,.3)}
+.vcard.ultimate.selected::after{background:var(--red);color:#fff;box-shadow:0 0 14px rgba(255,43,31,.5)}
+.vcard-head{display:flex;align-items:center;gap:9px;margin-bottom:6px}
+.vcard-dot{width:8px;height:8px;min-width:8px;border-radius:50%;background:rgba(255,255,255,.35);transition:all var(--sp) ease}
+.vcard.selected .vcard-dot{background:#fff;box-shadow:0 0 12px rgba(255,255,255,.8)}
+.vcard.ultimate.selected .vcard-dot{background:var(--red);box-shadow:0 0 12px rgba(255,43,31,.7)}
+.vcard-name{font-family:var(--fontD);font-weight:700;font-size:16px;letter-spacing:.05em;color:var(--ink)}
+.vcard-tag{font-family:var(--fontM);font-size:11px;color:var(--ink3);margin-bottom:8px}
+.vcard-feats{list-style:none;display:flex;flex-direction:column;gap:4px}
+.vcard-feats li{font-size:12px;color:var(--ink2);display:flex;align-items:center;gap:8px}
+.vcard-feats li::before{content:'';width:3px;height:3px;min-width:3px;border-radius:50%;background:rgba(255,255,255,.5)}
+.presets{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+.preset{padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:rgba(255,255,255,.05);color:var(--ink2);font-family:var(--fontM);font-size:11.5px;transition:all var(--sp) var(--ease);cursor:pointer}
+.preset:hover{color:var(--ink);background:rgba(255,255,255,.1);transform:translateY(-1px)}
+.preset.on{color:var(--ink);border-color:rgba(255,43,31,.5);background:var(--red2);box-shadow:0 0 14px rgba(255,43,31,.22)}
+.pgroup{border-top:1px solid var(--line2);padding-top:14px;margin-top:14px}
+.pgroup:first-of-type{border-top:none;padding-top:0;margin-top:0}
+.pgroup-title{font-family:var(--fontM);font-size:10.5px;letter-spacing:.1em;color:var(--red);text-transform:uppercase;margin-bottom:12px;font-weight:600}
+.prow{margin-bottom:14px}
+.prow-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;gap:10px}
+.prow-name{color:var(--ink);font-size:13px;font-weight:500}
+.prow-name small{color:var(--ink4);font-size:11px;font-weight:400;font-family:var(--fontM);margin-left:6px}
+.prow-val{font-family:var(--fontM);font-size:12px;color:var(--red);font-weight:600;min-width:44px;text-align:right;font-variant-numeric:tabular-nums}
+.prow-hint{font-family:var(--fontM);font-size:10.5px;color:var(--ink4);line-height:1.5;margin-top:5px}
+.range{position:relative;height:6px;background:rgba(255,255,255,.08);border-radius:3px;cursor:pointer;margin:8px 0}
+.range input[type=range]{position:absolute;inset:-10px 0;width:100%;height:26px;opacity:0;cursor:pointer;-webkit-appearance:none}
+.range-fill{position:absolute;top:0;left:0;height:100%;background:linear-gradient(90deg,var(--red),#ff6b5f);border-radius:3px;pointer-events:none;transition:width .1s}
+.range-thumb{position:absolute;top:50%;width:14px;height:14px;min-width:14px;background:#fff;border-radius:50%;transform:translate(-50%,-50%);box-shadow:0 0 12px rgba(255,43,31,.5);pointer-events:none;transition:left .1s}
+.range-thumb::after{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--red)}
+.prow-switch{display:flex;justify-content:space-between;align-items:center;padding:8px 0;gap:10px}
+.prow-switch .prow-name{flex:1}
+.switch{position:relative;width:44px;height:24px;min-width:44px;background:rgba(255,255,255,.1);border-radius:12px;cursor:pointer;transition:background .25s}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#8f8f8f;transition:all .25s}
+.switch.on{background:var(--red2);box-shadow:0 0 12px rgba(255,43,31,.3) inset}
+.switch.on::after{left:23px;background:var(--red);box-shadow:0 0 10px rgba(255,43,31,.7)}
+.ptextarea{width:100%;min-height:80px;background:#000;color:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:10px 12px;font-family:var(--fontM);font-size:12px;line-height:1.6;resize:vertical}
+.ptextarea:focus{outline:none;border-color:var(--red)}
+.pactions{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding-top:14px;border-top:1px solid var(--line2)}
+.pbtn{padding:10px 18px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.06);color:var(--ink);font-family:var(--fontM);font-size:12px;transition:all var(--sp) var(--ease);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.pbtn:hover{background:rgba(255,255,255,.12);transform:translateY(-1px)}
+.pbtn.red{border-color:var(--red3);background:var(--red2)}
+.pbtn.red:hover{background:rgba(255,43,31,.22);box-shadow:0 0 14px rgba(255,43,31,.25)}
+.pbtn.primary{background:var(--red);border-color:var(--red);color:#fff;font-weight:600}
+.pbtn.primary:hover{box-shadow:0 6px 20px rgba(255,43,31,.5)}
+.preset-active{font-family:var(--fontM);font-size:10.5px;color:var(--ink3);text-align:right;margin-bottom:8px}
+.preset-active b{color:var(--red)}
+.lightbox{position:fixed;inset:0;z-index:800;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);opacity:0;pointer-events:none;transition:opacity .3s;padding:24px}
+.lightbox.open{opacity:1;pointer-events:auto}
+.lightbox img{max-width:90vw;max-height:90vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.8)}
+.lightbox .lb-close{position:absolute;top:20px;right:20px;width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.1);color:#fff;font-size:20px;border:1px solid rgba(255,255,255,.2)}
+.lightbox .lb-close:hover{background:rgba(255,43,31,.5);transform:rotate(90deg)}
+.toast-box{position:fixed;top:max(18px,env(safe-area-inset-top));left:50%;transform:translateX(-50%);z-index:900;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:max-content;max-width:92vw}
+.toast{padding:10px 18px;border-radius:999px;border:1px solid var(--line);background:rgba(18,18,18,.9);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);font-family:var(--fontM);font-size:11.5px;color:#fff;max-width:90vw;box-shadow:0 12px 30px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.11);animation:toastIn .45s cubic-bezier(.34,1.56,.64,1) both;display:flex;align-items:center;gap:8px}
+.toast .tdot{width:5px;height:5px;min-width:5px;border-radius:50%;background:#fff;box-shadow:0 0 8px rgba(255,255,255,.7)}
+.toast.err{border-color:rgba(255,43,31,.45)}
+.toast.err .tdot{background:var(--red);box-shadow:0 0 8px rgba(255,43,31,.7)}
+.toast.out{animation:toastOut .35s var(--ease) both}
+@keyframes toastIn{from{opacity:0;transform:translateY(-16px) scale(.9);filter:blur(3px)}to{opacity:1;transform:translateY(0) scale(1);filter:blur(0)}}
+@keyframes toastOut{to{opacity:0;transform:translateY(-12px) scale(.94);filter:blur(3px)}}
+#sidebarBackdrop{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);opacity:0;pointer-events:none;transition:opacity .4s var(--ease);display:none}
+#sidebarBackdrop.show{opacity:1;pointer-events:auto;display:block}
+.fatal{position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;background:#050505;padding:18px}
+.fatal-box{max-width:520px;border-radius:18px;border:1px solid rgba(255,43,31,.45);background:rgba(20,10,10,.9);padding:22px;font-family:var(--fontM);font-size:11.5px;color:var(--ink2);line-height:1.7}
+.fatal-box b{color:var(--red)}
+@keyframes pulse{0%,100%{transform:scale(1);opacity:1}50%{transform:scale(.72);opacity:.55}}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes panelIn{from{opacity:0;transform:translateY(16px);filter:blur(5px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+@media (max-width:820px){
+body{font-size:13.5px}
+.app{padding:max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom)) 8px;gap:8px}
+.sidebar{position:fixed;z-index:500;top:8px;left:8px;bottom:8px;width:min(290px,86vw);min-width:0;transform:translateX(-115%);transition:transform .5s var(--ease);box-shadow:0 0 55px rgba(0,0,0,.7);animation:none;display:flex}
+.sidebar.open{transform:translateX(0)}
+.menu-btn{display:inline-flex}
+.topbar{padding:9px 11px;gap:7px}
+.brand-name{font-size:18px}
+.brand-ver{display:none}
+.tagline{display:none}
+.tbtn{padding:7px 10px;font-size:11px}
+.tbtn .vlbl{display:none}
+.chat{padding:14px 11px 12px;gap:12px}
+.msg{max-width:100%}
+.avatar{width:30px;height:30px;min-width:30px;border-radius:10px}
+.bubble{padding:11px 13px}
+.composer{padding:9px 11px 7px}
+.composer textarea{font-size:16px}
+.send-btn{width:40px;height:40px;min-width:40px}
+.img-btn{width:40px;height:40px;min-width:40px}
+.composer-hint{display:none}
+.modal{padding:16px}
+.mover{padding:10px}
+.welcome{padding:14px 6px}
+.ai-image-wrap{max-width:100%}
+.ai-image-wrap.loading{max-width:240px}
+}
+@media (max-width:380px){.brand-name{font-size:16px}}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}}
+.acc-input-row{display:flex;gap:8px;margin-top:10px}
+.acc-input{flex:1;padding:11px 14px;border-radius:10px;background:rgba(0,0,0,.35);border:1px solid var(--line);color:var(--ink);font-family:var(--fontM);font-size:13px;letter-spacing:.08em;text-transform:uppercase}
+.acc-input:focus{outline:none;border-color:var(--red);box-shadow:0 0 0 2px rgba(255,43,31,.15)}
+.acc-status{margin-top:10px;padding:10px 12px;border-radius:10px;font-family:var(--fontM);font-size:11.5px;line-height:1.55;display:none}
+.acc-status.ok{display:block;background:rgba(127,255,159,.08);border:1px solid rgba(127,255,159,.3);color:#c8ffd8}
+.acc-status.err{display:block;background:rgba(255,43,31,.1);border:1px solid rgba(255,43,31,.35);color:#ffb3a8}
+.acc-status.load{display:block;background:rgba(143,215,255,.08);border:1px solid rgba(143,215,255,.3);color:#c9e9ff}
+.acc-hint{font-family:var(--fontM);font-size:10.5px;color:var(--ink4);margin-top:8px;line-height:1.65}
+.acc-hint b{color:var(--ink3);font-weight:600}
+.gsi-wrap{display:flex;justify-content:center;padding:4px 0;min-height:44px}
+.user-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;border:1px solid var(--line2);background:rgba(255,255,255,.04)}
+.user-avatar{width:44px;height:44px;min-width:44px;border-radius:50%;background:var(--red2);border:1px solid var(--red3);display:flex;align-items:center;justify-content:center;font-family:var(--fontD);font-weight:900;color:#fff;font-size:18px;overflow:hidden}
+.user-avatar img{width:100%;height:100%;object-fit:cover}
+.user-info{flex:1;min-width:0}
+.user-name{font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.user-email{font-family:var(--fontM);font-size:11px;color:var(--ink3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:2px}
+.plan-chip{display:inline-flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;font-family:var(--fontM);font-size:10.5px;letter-spacing:.08em;font-weight:600;margin-bottom:10px}
+.plan-chip .pdot{width:6px;height:6px;border-radius:50%;background:currentColor;box-shadow:0 0 8px currentColor}
+.plan-chip.none{background:rgba(255,255,255,.05);border:1px solid var(--line2);color:var(--ink3)}
+.plan-chip.perm{background:linear-gradient(135deg,rgba(127,255,159,.2),rgba(127,255,159,.08));border:1px solid rgba(127,255,159,.55);color:#c8ffd8;box-shadow:0 0 14px rgba(127,255,159,.15)}
+.plan-chip.year{background:rgba(143,215,255,.14);border:1px solid rgba(143,215,255,.45);color:#c9e9ff}
+.plan-chip.month{background:rgba(255,204,136,.13);border:1px solid rgba(255,204,136,.42);color:#ffe0b3}
+.limit-bar{display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:rgba(0,0,0,.25);border:1px solid var(--line2);margin-top:6px}
+.limit-bar .lbl{flex:1;font-family:var(--fontM);font-size:11px;color:var(--ink3);letter-spacing:.04em}
+.limit-bar .val{font-family:var(--fontM);font-size:14px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+.limit-bar .val.warn{color:var(--yellow)}
+.limit-bar .val.danger{color:var(--red)}
+.limit-bar .val.inf{color:var(--green)}
+.tbtn.acc-active{border-color:rgba(127,255,159,.4);background:rgba(127,255,159,.08)}
+.tbtn.acc-active .vdot{background:var(--green);box-shadow:0 0 8px rgba(127,255,159,.7)}
+.dnd-overlay{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.85);display:none;align-items:center;justify-content:center;font-family:var(--fontM);font-size:14px;color:#fff;border:3px dashed var(--red);margin:16px;border-radius:22px;pointer-events:none}
+.dnd-overlay.show{display:flex}
+.dnd-overlay .dnd-box{text-align:center;padding:24px}
+.dnd-overlay .dnd-box b{display:block;font-size:20px;margin-bottom:8px;color:var(--red)}
+.settings-hub{display:flex;flex-direction:column;gap:8px}
+.settings-tile{display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:14px;border:1px solid var(--line2);background:rgba(255,255,255,.04);text-align:left;transition:all var(--sp) var(--ease);width:100%;cursor:pointer}
+.settings-tile:hover{background:rgba(255,255,255,.09);border-color:var(--line);transform:translateX(3px);box-shadow:0 8px 24px rgba(0,0,0,.35),0 0 18px rgba(255,43,31,.12)}
+.settings-tile:active{transform:scale(.98) translateX(3px)}
+.stile-icon{width:42px;height:42px;min-width:42px;border-radius:12px;display:inline-flex;align-items:center;justify-content:center;font-size:20px;background:linear-gradient(135deg,rgba(255,43,31,.15),rgba(255,255,255,.05));border:1px solid rgba(255,43,31,.28)}
+.stile-body{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.stile-title{font-size:14px;font-weight:600;color:var(--ink)}
+.stile-desc{font-family:var(--fontM);font-size:10.5px;color:var(--ink3);line-height:1.4}
+.stile-arrow{color:var(--ink3);font-size:16px;transition:all var(--sp) var(--ease)}
+.settings-tile:hover .stile-arrow{color:var(--red);transform:translateX(3px)}
+.about-block{font-family:var(--fontM);font-size:11.5px;color:var(--ink2);line-height:1.9}
+.about-block .line{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px solid var(--line2)}
+.about-block .line:last-child{border:none}
+.about-block .line b{color:var(--ink);font-weight:600;text-align:right}
+.about-block .line .red{color:var(--red)}
+</style>
+</head>
+<body>
+<canvas id="dotField"></canvas>
+<div class="vignette"></div>
+<div class="noise"></div>
+<div id="sidebarBackdrop"></div>
+
+<div class="app">
+<aside class="sidebar glass" id="sidebar">
+<div class="side-head">
+<span class="side-title">Чаты</span>
+<button class="icon-btn" id="btnClear" title="Очистить">✕</button>
+<button class="icon-btn red" id="btnNew" title="Новый чат">＋</button>
+<button class="icon-btn" id="btnClose" title="Закрыть">☰</button>
+</div>
+<div class="history-list" id="history"></div>
+<div class="wm-panel" id="wmPanel" style="display:none">
+<div class="wm-title">Рабочая память</div>
+<div id="wmItems"></div>
+</div>
+<div class="brain-panel">
+<div class="row"><span>узлов графа</span><b class="green" id="bNodes">0</b></div>
+<div class="row"><span>связей</span><b class="blue" id="bEdges">0</b></div>
+<div class="row"><span>правил</span><b class="yellow" id="bRules">0</b></div>
+</div>
+<div class="side-foot">
+<div class="creator">Создатель<br><b>CodeXY Labs ™</b> · <span class="nick">LumiXeN</span></div>
+<div class="copy">© CodeXY Labs ™ 2026 · все права защищены</div>
+</div>
+</aside>
+
+<main class="main">
+<header class="topbar glass">
+<button class="icon-btn menu-btn" id="btnMenu" title="Меню">☰</button>
+<div class="brand">
+<span class="brand-dot"></span>
+<span class="brand-name">OnyX</span>
+<span class="brand-ver ultimate" id="brandVer">v 4.3 NOVA</span>
+</div>
+<div class="tagline" id="tagline"><span class="live"></span>понимаю · ищу · рисую · синтезирую</div>
+<div class="top-actions">
+<button class="tbtn" id="btnAccount" title="Аккаунт и активация">
+<span class="vdot"></span>
+<span class="vlbl" id="accountLbl">Аккаунт</span>
+<span class="arrow">👤</span>
+</button>
+<button class="tbtn" id="btnSettings" title="Настройки">
+<span class="vdot"></span>
+<span class="vlbl">Настройки</span>
+<span class="arrow">⚙</span>
+</button>
+<button class="tbtn" id="btnParams" title="Параметры модели">
+<span class="vdot"></span>
+<span class="vlbl">Параметры</span>
+<span class="arrow">🎛</span>
+</button>
+<button class="tbtn" id="btnVersion" title="Сменить модель">
+<span class="vdot"></span>
+<span class="vlbl" id="versionLbl">4.3 NOVA</span>
+<span class="arrow">▼</span>
+</button>
+</div>
+</header>
+
+<section class="chat glass" id="chat">
+<div class="welcome" id="welcome">
+<div class="welcome-logo">OnyX</div>
+<div class="welcome-tag" id="welcomeTag">
+<span class="wdot"></span>reasoning engine · русский · multi-source · images
+</div>
+<div class="chips">
+<button class="chip" data-q="Что такое нейросеть простыми словами?">Что такое нейросеть?</button>
+<button class="chip" data-q="Сравни Python и JavaScript">Сравни Python и JavaScript</button>
+<button class="chip" data-q="Как работает TCP?">Как работает TCP?</button>
+<button class="chip" data-q="Нарисуй киберпанк город ночью">🎨 Киберпанк город</button>
+<button class="chip" data-q="Почему небо голубое?">Почему небо голубое?</button>
+<button class="chip" data-q="Расскажи про квантовую запутанность">Квантовая запутанность</button>
+</div>
+</div>
+</section>
+
+<div class="reasoning-bar">
+<button class="rbar-btn on" id="btnReasoningToggle" title="Скрыть или показать рассуждение">
+<span class="rdot"></span>
+<span id="reasoningLabel">Скрыть рассуждение</span>
+</button>
+</div>
+
+<footer class="composer glass">
+<div class="composer-inner">
+<textarea id="input" rows="1" placeholder="Задай вопрос или попроси нарисовать…"></textarea>
+<button class="img-btn" id="btnImage" title="Режим рисования">🎨</button>
+<button class="send-btn" id="send" title="Отправить">➤</button>
+</div>
+<div class="composer-hint">OnyX · 1 токен = 1 символ · стоимость: <b>$0.002 / токен</b></div>
+</footer>
+</main>
+</div>
+
+<div class="mover" id="paramsModal">
+<div class="modal wide glass">
+<div class="mhead">
+<span class="mtitle">🎛 Параметры модели</span>
+<button class="mclose" id="paramsClose">✕</button>
+</div>
+<div class="mblock">
+<div class="mlabel">Быстрые пресеты</div>
+<div class="preset-active">Активный: <b id="activePreset">Сбалансированный</b></div>
+<div class="presets" id="presets">
+<button class="preset" data-preset="precise">🎯 Точный</button>
+<button class="preset on" data-preset="balanced">⚖ Сбалансированный</button>
+<button class="preset" data-preset="creative">🎨 Креативный</button>
+<button class="preset" data-preset="expert">🎓 Эксперт</button>
+<button class="preset" data-preset="fast">⚡ Быстрый</button>
+<button class="preset" data-preset="deep">🧠 Глубокий</button>
+</div>
+</div>
+<div class="mblock">
+<div class="pgroup">
+<div class="pgroup-title">Генерация</div>
+<div class="prow" data-param="temperature">
+<div class="prow-head"><span class="prow-name">Температура <small>temperature</small></span><span class="prow-val" id="val-temperature">0.7</span></div>
+<div class="range" data-range="temperature"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="0" max="2" step="0.05" value="0.7"></div>
+<div class="prow-hint">Случайность ответа</div>
+</div>
+<div class="prow" data-param="top_p">
+<div class="prow-head"><span class="prow-name">Top-P <small>nucleus sampling</small></span><span class="prow-val" id="val-top_p">0.9</span></div>
+<div class="range" data-range="top_p"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="0.1" max="1" step="0.05" value="0.9"></div>
+<div class="prow-hint">Nucleus sampling</div>
+</div>
+<div class="prow" data-param="top_k">
+<div class="prow-head"><span class="prow-name">Top-K <small>гипотезы</small></span><span class="prow-val" id="val-top_k">5</span></div>
+<div class="range" data-range="top_k"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="1" max="10" step="1" value="5"></div>
+<div class="prow-hint">Сколько гипотез рассматривать</div>
+</div>
+<div class="prow" data-param="max_tokens">
+<div class="prow-head"><span class="prow-name">Max tokens</span><span class="prow-val" id="val-max_tokens">4000</span></div>
+<div class="range" data-range="max_tokens"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="200" max="10000" step="100" value="4000"></div>
+<div class="prow-hint">Максимальная длина ответа</div>
+</div>
+<div class="prow" data-param="repetition_penalty">
+<div class="prow-head"><span class="prow-name">Штраф за повторы</span><span class="prow-val" id="val-repetition_penalty">1.1</span></div>
+<div class="range" data-range="repetition_penalty"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="1" max="2" step="0.05" value="1.1"></div>
+<div class="prow-hint">Штраф за повторы слов</div>
+</div>
+</div>
+<div class="pgroup">
+<div class="pgroup-title">Reasoning</div>
+<div class="prow" data-param="reasoning_depth">
+<div class="prow-head"><span class="prow-name">Глубина графа</span><span class="prow-val" id="val-reasoning_depth">4</span></div>
+<div class="range" data-range="reasoning_depth"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="1" max="6" step="1" value="4"></div>
+<div class="prow-hint">Уровней связей в графе</div>
+</div>
+<div class="prow" data-param="activation_decay">
+<div class="prow-head"><span class="prow-name">Затухание</span><span class="prow-val" id="val-activation_decay">0.68</span></div>
+<div class="range" data-range="activation_decay"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="0.2" max="0.95" step="0.02" value="0.68"></div>
+<div class="prow-hint">Как быстро рассеивается активация</div>
+</div>
+<div class="prow" data-param="confidence_threshold">
+<div class="prow-head"><span class="prow-name">Порог уверенности</span><span class="prow-val" id="val-confidence_threshold">0.3</span></div>
+<div class="range" data-range="confidence_threshold"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="0" max="0.9" step="0.05" value="0.3"></div>
+<div class="prow-hint">Порог отбрасывания гипотез</div>
+</div>
+<div class="prow" data-param="max_derived">
+<div class="prow-head"><span class="prow-name">Максимум выводов</span><span class="prow-val" id="val-max_derived">40</span></div>
+<div class="range" data-range="max_derived"><div class="range-fill"></div><div class="range-thumb"></div><input type="range" min="5" max="100" step="5" value="40"></div>
+<div class="prow-hint">Сколько фактов выводить по правилам</div>
+</div>
+</div>
+<div class="pgroup">
+<div class="pgroup-title">Источники</div>
+<div class="prow-switch"><span class="prow-name">Веб-поиск</span><div class="switch on" data-switch="use_web"></div></div>
+<div class="prow-switch"><span class="prow-name">Генерация изображений</span><div class="switch on" data-switch="use_images"></div></div>
+<div class="prow-switch"><span class="prow-name">Показывать рассуждение</span><div class="switch on" data-switch="show_reasoning"></div></div>
+<div class="prow-switch"><span class="prow-name">Структурированные ответы</span><div class="switch on" data-switch="structured_output"></div></div>
+</div>
+<div class="pgroup">
+<div class="pgroup-title">Системный промпт</div>
+<textarea class="ptextarea" id="systemPrompt" placeholder="Опиши стиль и поведение модели…"></textarea>
+</div>
+<div class="pactions">
+<button class="pbtn primary" id="paramsApply">✓ Применить</button>
+<button class="pbtn" id="paramsReset">⟲ Сбросить</button>
+<button class="pbtn" id="paramsExport">📋 Экспорт</button>
+<button class="pbtn" id="paramsImport">📥 Импорт</button>
+</div>
+</div>
+</div>
+</div>
+
+<div class="mover" id="versionModal">
+<div class="modal glass">
+<div class="mhead">
+<span class="mtitle">Модели OnyX</span>
+<button class="mclose" id="versionClose">✕</button>
+</div>
+<div id="versionCards"></div>
+</div>
+</div>
+
+<div class="mover" id="accountModal">
+<div class="modal glass">
+<div class="mhead">
+<span class="mtitle">👤 Аккаунт и активация</span>
+<button class="mclose" id="accountClose">✕</button>
+</div>
+<div class="mblock">
+<div class="mlabel">Аккаунт</div>
+<div id="accountBody"></div>
+</div>
+<div class="mblock">
+<div class="mlabel">Код активации</div>
+<div class="acc-input-row">
+<input class="acc-input" id="activationInput" placeholder="PERM-XXXXXX-XXXXXX" maxlength="20" autocomplete="off" spellcheck="false">
+<button class="pbtn primary" id="btnActivate">Активировать</button>
+</div>
+<div class="acc-status" id="activationStatus"></div>
+<div class="acc-hint">Форматы: <b>PERM-XXXXXX-XXXXXX</b> (навсегда) · <b>YEAR-XXXXXX-XXXXXX</b> (1 год) · <b>MONTH-XXXXXX-XXXXXX</b> (1 месяц)</div>
+<div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+<button class="pbtn" id="btnImportCodes">📥 Импорт файла с кодами</button>
+<input type="file" id="codesFileInput" accept=".txt" style="display:none">
+<button class="pbtn" id="btnReloadCodes">⟳ Автозагрузка</button>
+<button class="pbtn" id="btnClearCodes">🗑 Сброс</button>
+</div>
+<div class="acc-hint" id="codesCount">Загружено кодов: 0</div>
+</div>
+<div class="mblock">
+<div class="mlabel">Лимиты запросов</div>
+<div id="limitsBody"></div>
+<div class="acc-hint">
+Без входа: <b>10 запросов/день</b><br>
+После входа через Google: <b>15 запросов/день</b><br>
+С активным кодом: <b>безлимит</b> на срок действия кода
+</div>
+</div>
+<div class="pactions">
+<button class="pbtn red" id="btnLogout" style="display:none">Выйти из аккаунта</button>
+</div>
+</div>
+</div>
+
+<div class="mover" id="settingsModal">
+<div class="modal glass">
+<div class="mhead">
+<span class="mtitle">⚙ Настройки</span>
+<button class="mclose" id="settingsClose">✕</button>
+</div>
+<div class="settings-hub">
+<button class="settings-tile" data-open="accountModal">
+<span class="stile-icon">👤</span>
+<span class="stile-body"><span class="stile-title">Аккаунт и активация</span><span class="stile-desc">Вход через Google · код активации · лимиты</span></span>
+<span class="stile-arrow">→</span>
+</button>
+<button class="settings-tile" data-open="paramsModal">
+<span class="stile-icon">🎛</span>
+<span class="stile-body"><span class="stile-title">Параметры модели</span><span class="stile-desc">temperature · top_p · top_k · пресеты</span></span>
+<span class="stile-arrow">→</span>
+</button>
+<button class="settings-tile" data-open="versionModal">
+<span class="stile-icon">🤖</span>
+<span class="stile-body"><span class="stile-title">Модель OnyX</span><span class="stile-desc">2.5 · 3.1 · 4.0 Pro · 4.2 ULTIMATE · 4.3 NOVA</span></span>
+<span class="stile-arrow">→</span>
+</button>
+<button class="settings-tile" id="stileAbout">
+<span class="stile-icon">ℹ️</span>
+<span class="stile-body"><span class="stile-title">О программе</span><span class="stile-desc">CodeXY Labs ™ · OnyX NOVA 4.3 · 2026</span></span>
+<span class="stile-arrow">→</span>
+</button>
+</div>
+</div>
+</div>
+
+<div class="mover" id="aboutModal">
+<div class="modal glass">
+<div class="mhead">
+<span class="mtitle">ℹ️ О программе</span>
+<button class="mclose" id="aboutClose">✕</button>
+</div>
+<div class="about-block">
+<div class="line"><span>Продукт</span><b>OnyX NOVA</b></div>
+<div class="line"><span>Версия</span><b>4.3</b></div>
+<div class="line"><span>Разработчик</span><b class="red">CodeXY Labs ™</b></div>
+<div class="line"><span>Создатель</span><b>LumiXeN</b></div>
+<div class="line"><span>Год</span><b>2026</b></div>
+<div class="line"><span>Движок</span><b>Reasoning + Web + Images</b></div>
+<div class="line"><span>Источники</span><b>Wikipedia · Stack Overflow · DuckDuckGo</b></div>
+</div>
+<div class="acc-hint" style="text-align:center;margin-top:14px">© CodeXY Labs ™ · все права защищены</div>
+</div>
+</div>
+
+<div class="lightbox" id="lightbox">
+<button class="lb-close" id="lightboxClose">✕</button>
+<img id="lightboxImg" src="" alt="OnyX image">
+</div>
+
+<div class="dnd-overlay" id="dndOverlay">
+<div class="dnd-box"><b>Отпусти .txt файл</b>коды загрузятся автоматически</div>
+</div>
+
+<div class="toast-box" id="toastBox"></div>
+
+<script>
+'use strict';
+
+window.addEventListener('error', function(e){
+  try{
+    console.error('[OnyX error]', e.message, e.filename, e.lineno);
+    if(document.querySelector('.fatal')) return;
+    if(!document.body) return;
+    var box = document.createElement('div');
+    box.className = 'fatal';
+    box.innerHTML = '<div class="fatal-box"><b>OnyX · ошибка</b><br><br>' + String(e.message || e).replace(/</g, '&lt;') + '<br><br>Строка: ' + (e.lineno || '?') + '<br><br>F5 для перезагрузки.</div>';
+    document.body.appendChild(box);
+  }catch(err){}
+});
+window.addEventListener('unhandledrejection', function(e){ try{ console.warn('[OnyX unhandled]', e.reason); }catch(err){} });
+
+function $(sel){ try{ return document.querySelector(sel); }catch(e){ return null; } }
+function $$(sel){ try{ return Array.prototype.slice.call(document.querySelectorAll(sel)); }catch(e){ return []; } }
+function rnd(a, b){ return Math.random() * (b - a) + a; }
+function rndInt(a, b){ return Math.floor(rnd(a, b + 1)); }
+function pick(arr){ if(!arr || !arr.length) return null; return arr[rndInt(0, arr.length - 1)]; }
+function clamp(x, a, b){ return Math.max(a, Math.min(b, x)); }
+function esc(s){ return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+function trim(t, n){ t = String(t == null ? '' : t).trim(); if(t.length <= n) return t; return t.slice(0, n - 1).trim() + '…'; }
+function nowTime(){ try{ return new Date().toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}); }catch(e){ return '--:--'; } }
+function uid(){ return 'c' + Date.now() + rndInt(100, 999); }
+function countTokens(s){ return String(s == null ? '' : s).length; }
+var COST_PER_TOKEN = 0.002;
+function formatCost(tokens){ var cost = tokens * COST_PER_TOKEN; if(cost < 0.001) return '$' + cost.toFixed(6); if(cost < 1) return '$' + cost.toFixed(4); return '$' + cost.toFixed(2); }
+function hashStr(s){ var h = 5381; var str = String(s); for(var i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return h >>> 0; }
+function sleep(ms){ return new Promise(function(r){ setTimeout(r, ms); }); }
+function looksLikeRussian(text){
+  var s = String(text || ''); var ru = 0, total = 0;
+  for(var i = 0; i < s.length; i++){ var ch = s.charAt(i); if(/[а-яё]/i.test(ch)){ ru++; total++; } else if(/[a-z]/i.test(ch)){ total++; } }
+  if(!total) return false;
+  return ru / total >= 0.3;
+}
+function normalizeConcept(s){ return String(s == null ? '' : s).toLowerCase().replace(/ё/g, 'е').replace(/[^\p{L}\p{N}\s\-]/gu, ' ').replace(/\s+/g, ' ').trim(); }
+function sanitizeText(s){
+  var t = String(s == null ? '' : s);
+  t = t.replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, '');
+  t = t.replace(/\r/g, '').replace(/\t/g, ' ');
+  t = t.replace(/[\u200B-\u200D\uFEFF]/g, '');
+  t = t.replace(/\s+/g, ' ');
+  return t.trim();
+}
+function stripHtml(html){
+  if(!html) return '';
+  var t = String(html);
+  t = t.replace(/<script[\s\S]*?<\/script>/gi, '');
+  t = t.replace(/<style[\s\S]*?<\/style>/gi, '');
+  t = t.replace(/<!--[\s\S]*?-->/g, '');
+  t = t.replace(/<[^>]+>/g, ' ');
+  t = t.replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&#x27;/g, "'").replace(/&hellip;/g, '…').replace(/&mdash;/g, '—').replace(/&ndash;/g, '–').replace(/&laquo;/g, '«').replace(/&raquo;/g, '»');
+  t = t.replace(/\[\d+\]/g, '');
+  t = t.replace(/\{\{[^{}]*\}\}/g, '');
+  t = t.replace(/\[\[([^\]|]+)\|([^\]]+)\]\]/g, '$2');
+  t = t.replace(/\[\[([^\]]+)\]\]/g, '$1');
+  t = t.replace(/'''/g, '').replace(/''/g, '');
+  return sanitizeText(t);
+}
+function cut(s, max){
+  s = String(s == null ? '' : s).trim();
+  if(s.length <= max) return s;
+  var c = s.slice(0, max);
+  var lastDot = Math.max(c.lastIndexOf('. '), c.lastIndexOf('! '), c.lastIndexOf('? '));
+  if(lastDot > max * 0.6) c = c.slice(0, lastDot + 1);
+  return c.trim() + '…';
+}
+async function fetchWithTimeout(url, opts, timeoutMs){
+  var timeout = timeoutMs || 12000; var controller = null; var timer = null;
+  try{
+    if(typeof AbortController !== 'undefined'){ controller = new AbortController(); timer = setTimeout(function(){ controller.abort(); }, timeout); }
+    var response = await fetch(url, Object.assign({}, opts || {}, controller ? {signal: controller.signal} : {}));
+    if(timer) clearTimeout(timer);
+    return response;
+  }catch(e){ if(timer) clearTimeout(timer); throw e; }
+}
+
+var DEFAULT_PARAMS = {
+  temperature: 0.7, top_p: 0.9, top_k: 5, max_tokens: 4000, repetition_penalty: 1.1,
+  reasoning_depth: 4, activation_decay: 0.68, confidence_threshold: 0.3, max_derived: 40,
+  use_web: true, use_images: true, show_reasoning: true, structured_output: true,
+  system_prompt: 'Ты — OnyX, современный русскоязычный AI-ассистент. Отвечай точно, чётко и структурированно на русском языке.'
+};
+
+var PRESETS = {
+  precise: { name: 'Точный', params: { temperature: 0.2, top_p: 0.7, top_k: 3, max_tokens: 3000, repetition_penalty: 1.15, reasoning_depth: 3, activation_decay: 0.55, confidence_threshold: 0.5, max_derived: 25 } },
+  balanced: { name: 'Сбалансированный', params: { temperature: 0.7, top_p: 0.9, top_k: 5, max_tokens: 4000, repetition_penalty: 1.1, reasoning_depth: 4, activation_decay: 0.68, confidence_threshold: 0.3, max_derived: 40 } },
+  creative: { name: 'Креативный', params: { temperature: 1.4, top_p: 0.95, top_k: 8, max_tokens: 5000, repetition_penalty: 1.05, reasoning_depth: 5, activation_decay: 0.78, confidence_threshold: 0.15, max_derived: 55 } },
+  expert: { name: 'Эксперт', params: { temperature: 0.4, top_p: 0.85, top_k: 7, max_tokens: 8000, repetition_penalty: 1.2, reasoning_depth: 6, activation_decay: 0.85, confidence_threshold: 0.4, max_derived: 80 } },
+  fast: { name: 'Быстрый', params: { temperature: 0.6, top_p: 0.85, top_k: 3, max_tokens: 1500, repetition_penalty: 1.05, reasoning_depth: 2, activation_decay: 0.45, confidence_threshold: 0.25, max_derived: 15 } },
+  deep: { name: 'Глубокий', params: { temperature: 0.5, top_p: 0.92, top_k: 9, max_tokens: 9000, repetition_penalty: 1.15, reasoning_depth: 6, activation_decay: 0.88, confidence_threshold: 0.35, max_derived: 90 } }
+};
+
+var Parameters = {
+  current: Object.assign({}, DEFAULT_PARAMS),
+  activePreset: 'balanced',
+  load: function(){
+    try{
+      var r = localStorage.getItem('onyx_params_v4');
+      if(r){ var p = JSON.parse(r); if(p && p.current) this.current = Object.assign({}, DEFAULT_PARAMS, p.current); if(p && p.activePreset) this.activePreset = p.activePreset; }
+    }catch(e){}
+  },
+  save: function(){ try{ localStorage.setItem('onyx_params_v4', JSON.stringify({ current: this.current, activePreset: this.activePreset })); }catch(e){} },
+  apply: function(preset){ if(!PRESETS[preset]) return; this.current = Object.assign({}, this.current, PRESETS[preset].params); this.activePreset = preset; this.save(); },
+  reset: function(){ this.current = Object.assign({}, DEFAULT_PARAMS); this.activePreset = 'balanced'; this.save(); },
+  get: function(key){ return this.current[key]; },
+  set: function(key, value){ this.current[key] = value; this.save(); }
+};
+
+var VERSIONS = {
+'2.5': { name:'OnyX Ai 2.5', short:'2.5', badge:'v 2.5', tagline:'OnyX 2.5 · базовые ответы', tagline2:'2.5 · базовые ответы', placeholder:'Спроси OnyX 2.5…', depth:1, decay:0.4, maxHypotheses:2, maxAnswerLength:800, useWeb:false, useImages:false, cls:'' },
+'3.1': { name:'OnyX Ai 3.1', short:'3.1', badge:'v 3.1', tagline:'OnyX 3.1 · расширенный поиск', tagline2:'3.1 · расширенный поиск', placeholder:'Спроси OnyX 3.1…', depth:2, decay:0.5, maxHypotheses:3, maxAnswerLength:1400, useWeb:true, useImages:true, cls:'' },
+'4.0': { name:'OnyX Ai 4.0 Pro', short:'4.0 Pro', badge:'v 4.0 Pro', tagline:'OnyX 4.0 Pro · глубокий анализ', tagline2:'4.0 Pro · глубокий анализ', placeholder:'Спроси OnyX 4.0 Pro…', depth:2, decay:0.55, maxHypotheses:4, maxAnswerLength:2200, useWeb:true, useImages:true, cls:'pro' },
+'4.2': { name:'OnyX Ai 4.2 ULTIMATE', short:'4.2 ULTIMATE', badge:'v 4.2 ULTIMATE', tagline:'OnyX 4.2 ULTIMATE · знаю практически всё', tagline2:'4.2 ULTIMATE · знаю практически всё', placeholder:'Спроси OnyX 4.2 ULTIMATE…', depth:3, decay:0.6, maxHypotheses:5, maxAnswerLength:3500, useWeb:true, useImages:true, cls:'ultimate' },
+'4.3': { name:'OnyX Ai 4.3 NOVA', short:'4.3 NOVA', badge:'v 4.3 NOVA', tagline:'OnyX 4.3 NOVA · максимум · источники + изображения', tagline2:'4.3 NOVA · максимум возможностей', placeholder:'Спроси OnyX 4.3 NOVA…', depth:4, decay:0.68, maxHypotheses:8, maxAnswerLength:6000, useWeb:true, useImages:true, cls:'ultimate' }
+};
+
+/* ============ ACCOUNT · ACTIVATION ============ */
+var CODES_STORAGE_KEY = 'onyx_codes_v1';
+var USED_CODES_KEY   = 'onyx_used_codes_v1';
+var USER_KEY         = 'onyx_user_v1';
+var PLAN_KEY         = 'onyx_plan_v1';
+var USAGE_KEY        = 'onyx_usage_v1';
+
+var SEED_CODES = [
+  'PERM-8XYL2Q-BWPJT4','PERM-ODSL0J-DFTU0V','PERM-RT9VMJ-RIU5GJ',
+  'YEAR-TN1B42-KAWEHK','YEAR-81C519-W4PSNP','YEAR-VU4R92-WV9LZ1',
+  'MONTH-XOD753-23LIV1','MONTH-SUMK9X-5I03NN','MONTH-8LNFE9-6BY1RW'
+];
+
+function todayStr(){ var d = new Date(); return d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate(); }
+function parseCodesFromText(text){
+  var set = new Set();
+  var re = /(PERM|YEAR|MONTH)-[A-Z0-9]{6}-[A-Z0-9]{6}/g;
+  var m; while((m = re.exec(String(text||''))) !== null) set.add(m[0]);
+  return set;
+}
+
+var Activation = {
+  codes: new Set(), used: new Set(),
+  init: function(){
+    try{
+      var raw = localStorage.getItem(CODES_STORAGE_KEY);
+      if(raw){ var arr = JSON.parse(raw); if(Array.isArray(arr)) this.codes = new Set(arr); }
+      if(!this.codes || this.codes.size === 0){
+        this.codes = new Set();
+        for(var i=0;i<SEED_CODES.length;i++) this.codes.add(SEED_CODES[i]);
+      }
+      var u = localStorage.getItem(USED_CODES_KEY);
+      if(u){ var ua = JSON.parse(u); if(Array.isArray(ua)) this.used = new Set(ua); }
+    }catch(e){}
+    this.updateCount();
+  },
+  save: function(){
+    try{
+      localStorage.setItem(CODES_STORAGE_KEY, JSON.stringify(Array.from(this.codes)));
+      localStorage.setItem(USED_CODES_KEY, JSON.stringify(Array.from(this.used)));
+    }catch(e){}
+  },
+  updateCount: function(){
+    var el = document.getElementById('codesCount');
+    if(el) el.textContent = 'Загружено кодов: ' + this.codes.size.toLocaleString('ru-RU') + ' · активировано: ' + this.used.size;
+  },
+  validate: function(input){
+    var code = String(input||'').trim().toUpperCase().replace(/\s+/g,'');
+    if(!/^(PERM|YEAR|MONTH)-[A-Z0-9]{6}-[A-Z0-9]{6}$/.test(code)) return { ok:false, msg:'Неверный формат. Пример: PERM-8XYL2Q-BWPJT4' };
+    if(this.used.has(code)) return { ok:false, msg:'Этот код уже активирован.' };
+    if(!this.codes.has(code)){
+      if(this.codes.size <= 9) return { ok:false, msg:'Файл с кодами не загружен. Нажми «Автозагрузка» или «Импорт файла».' };
+      return { ok:false, msg:'Код не найден в файле onyx_activation_codes_10000.txt.' };
+    }
+    return { ok:true, code:code };
+  },
+  activate: function(code){
+    var v = this.validate(code);
+    if(!v.ok) return v;
+    var type = v.code.split('-')[0];
+    var days = type === 'PERM' ? null : (type === 'YEAR' ? 365 : 30);
+    this.used.add(v.code); this.save();
+    Account.setPlan(type, days);
+    this.updateCount();
+    return { ok:true, msg:'Код активирован: ' + (type==='PERM' ? 'бессрочно' : days + ' дн.') };
+  },
+  importFromFile: function(text){
+    var set = parseCodesFromText(text);
+    var added = 0;
+    set.forEach(function(c){ if(!Activation.codes.has(c)){ Activation.codes.add(c); added++; } });
+    this.save(); this.updateCount();
+    return added;
+  },
+  clear: function(){
+    this.codes = new Set(SEED_CODES);
+    this.used = new Set();
+    this.save(); this.updateCount();
+  }
+};
+
+var Account = {
+  user: null, plan: null,
+  init: function(){
+    try{
+      var u = localStorage.getItem(USER_KEY); if(u) this.user = JSON.parse(u);
+      var p = localStorage.getItem(PLAN_KEY); if(p){
+        this.plan = JSON.parse(p);
+        if(this.plan && this.plan.expiresAt && Date.now() > this.plan.expiresAt) this.plan = null;
+      }
+    }catch(e){}
+    this.render();
+  },
+  setUser: function(user){
+    this.user = user || null;
+    try{ if(user) localStorage.setItem(USER_KEY, JSON.stringify(user)); else localStorage.removeItem(USER_KEY); }catch(e){}
+    this.render();
+  },
+  setPlan: function(type, days){
+    this.plan = { type:type, activatedAt:Date.now(), expiresAt: days ? Date.now() + days * 86400000 : null };
+    try{ localStorage.setItem(PLAN_KEY, JSON.stringify(this.plan)); }catch(e){}
+    this.render();
+  },
+  hasActivePlan: function(){
+    if(!this.plan) return false;
+    if(this.plan.expiresAt && Date.now() > this.plan.expiresAt){ this.plan = null; return false; }
+    return true;
+  },
+  getDailyLimit: function(){ if(this.hasActivePlan()) return Infinity; return this.user ? 15 : 10; },
+  getUsage: function(){
+    try{
+      var raw = localStorage.getItem(USAGE_KEY);
+      if(!raw) return { date:todayStr(), count:0 };
+      var u = JSON.parse(raw);
+      if(u.date !== todayStr()) return { date:todayStr(), count:0 };
+      return u;
+    }catch(e){ return { date:todayStr(), count:0 }; }
+  },
+  incrementUsage: function(){
+    var u = this.getUsage(); u.count = (u.count||0) + 1;
+    try{ localStorage.setItem(USAGE_KEY, JSON.stringify(u)); }catch(e){}
+    this.render();
+  },
+  remaining: function(){
+    var lim = this.getDailyLimit();
+    if(lim === Infinity) return Infinity;
+    return Math.max(0, lim - this.getUsage().count);
+  },
+  canSend: function(){ return this.remaining() > 0; },
+  render: function(){
+    try{
+      var lbl = document.getElementById('accountLbl');
+      var btn = document.getElementById('btnAccount');
+      if(lbl && btn){
+        if(this.hasActivePlan()){
+          var t = this.plan.type;
+          lbl.textContent = t === 'PERM' ? '∞ навсегда' : (t === 'YEAR' ? '∞ год' : '∞ месяц');
+        } else if(this.user){
+          var nm = String(this.user.name || this.user.email || 'вы').split(' ')[0];
+          lbl.textContent = nm + ' · ' + this.remaining() + '/15';
+        } else lbl.textContent = 'Гость · ' + this.remaining() + '/10';
+        btn.classList.toggle('acc-active', this.hasActivePlan() || !!this.user);
+      }
+      var body = document.getElementById('accountBody'); if(body) body.innerHTML = this.renderAccountBody();
+      var lim = document.getElementById('limitsBody'); if(lim) lim.innerHTML = this.renderLimitsBody();
+      var lo = document.getElementById('btnLogout'); if(lo) lo.style.display = this.user ? 'inline-flex' : 'none';
+    }catch(e){}
+  },
+  renderAccountBody: function(){
+    if(this.user){
+      var initial = String(this.user.name || this.user.email || '?').charAt(0).toUpperCase();
+      var avatar = this.user.picture ? '<img src="' + esc(this.user.picture) + '" alt="">' : initial;
+      return '<div class="user-card"><div class="user-avatar">' + avatar + '</div><div class="user-info"><div class="user-name">' + esc(this.user.name || 'Пользователь') + '</div><div class="user-email">' + esc(this.user.email || '') + '</div></div></div><div class="acc-hint">✓ Зарегистрирован · лимит <b>15/день</b></div>';
+    }
+    return '<div class="gsi-wrap" id="gsiButtonWrap"></div><div class="acc-hint">Войди через Google — лимит станет <b>15 запросов в день</b>.</div>';
+  },
+  renderLimitsBody: function(){
+    var limit = this.getDailyLimit(); var used = this.getUsage().count; var remain = this.remaining();
+    var cls = 'val';
+    var limitTxt = limit === Infinity ? '∞' : limit;
+    var remainTxt = remain === Infinity ? '∞' : remain;
+    if(remain !== Infinity){ if(remain<=0) cls+=' danger'; else if(remain<=2) cls+=' warn'; } else cls += ' inf';
+    var chip;
+    if(this.hasActivePlan()){
+      var p = this.plan;
+      var exp = p.expiresAt ? new Date(p.expiresAt).toLocaleDateString('ru-RU') : 'бессрочно';
+      var chipCls = p.type==='PERM' ? 'perm' : (p.type==='YEAR' ? 'year' : 'month');
+      var chipTxt = p.type==='PERM' ? 'PERMANENT' : (p.type==='YEAR' ? '1 YEAR' : '1 MONTH');
+      chip = '<div class="plan-chip ' + chipCls + '"><span class="pdot"></span>' + chipTxt + ' · до ' + exp + '</div>';
+    } else chip = '<div class="plan-chip none"><span class="pdot"></span>Код не активирован</div>';
+    return chip + '<div class="limit-bar"><span class="lbl">Использовано сегодня</span><span class="val">' + used + ' / ' + limitTxt + '</span></div><div class="limit-bar"><span class="lbl">Осталось сегодня</span><span class="' + cls + '">' + remainTxt + '</span></div>';
+  }
+};
+
+async function tryAutoLoadCodes(){
+  if(Activation.codes.size > 9) return;
+  var st = document.getElementById('activationStatus');
+  if(st){ st.className = 'acc-status load'; st.textContent = 'Загружаю onyx_activation_codes_10000.txt…'; }
+  try{
+    var r = await fetch('onyx_activation_codes_10000.txt', {cache:'no-store'});
+    if(!r.ok) throw new Error('HTTP ' + r.status);
+    var txt = await r.text();
+    var n = Activation.importFromFile(txt);
+    if(st){ st.className = 'acc-status ok'; st.textContent = '✓ Загружено кодов: ' + n.toLocaleString('ru-RU'); }
+    if(n > 0) toast('Загружено ' + n.toLocaleString('ru-RU') + ' кодов');
+  }catch(e){
+    if(st){ st.className = 'acc-status err'; st.textContent = '✕ Файл не найден. Открой сайт через http:// или нажми «Импорт файла».'; }
+  }
+}
+
+function initDragDropCodes(){
+  try{
+    var ov = document.getElementById('dndOverlay'); var counter = 0;
+    window.addEventListener('dragenter', function(e){ e.preventDefault(); counter++; if(ov) ov.classList.add('show'); });
+    window.addEventListener('dragover', function(e){ e.preventDefault(); });
+    window.addEventListener('dragleave', function(){ counter--; if(counter<=0 && ov){ ov.classList.remove('show'); counter=0; } });
+    window.addEventListener('drop', function(e){
+      e.preventDefault(); counter = 0; if(ov) ov.classList.remove('show');
+      var f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]; if(!f) return;
+      var reader = new FileReader();
+      reader.onload = function(){ var n = Activation.importFromFile(String(reader.result||'')); toast('Из ' + f.name + ' загружено: ' + n.toLocaleString('ru-RU')); };
+      reader.readAsText(f);
+    });
+  }catch(e){}
+}
+
+var GOOGLE_CLIENT_ID = '503185995905-1ju0aj7gvd0teo7rc1m1cev7dig3cqme.apps.googleusercontent.com';
+function initGoogleSignIn(){
+  try{
+    var wrap = document.getElementById('gsiButtonWrap'); if(!wrap || Account.user) return;
+    if(!window.google || !google.accounts || !google.accounts.id) return;
+    if(GOOGLE_CLIENT_ID.indexOf('YOUR_GOOGLE') !== -1){
+      wrap.innerHTML = '<div class="acc-hint" style="text-align:center;padding:14px;border:1px dashed var(--line2);border-radius:10px">⚠ Google-вход не настроен. Укажи GOOGLE_CLIENT_ID.</div>';
+      return;
+    }
+    google.accounts.id.initialize({ client_id:GOOGLE_CLIENT_ID, callback:handleGoogleCredential, auto_select:false, cancel_on_tap_outside:true });
+    google.accounts.id.renderButton(wrap, { type:'standard', theme:'filled_black', size:'large', text:'continue_with', shape:'pill', width:280 });
+  }catch(e){}
+}
+function handleGoogleCredential(response){
+  try{
+    if(!response || !response.credential) return;
+    var parts = response.credential.split('.'); if(parts.length !== 3) return;
+    var b64 = parts[1].replace(/-/g,'+').replace(/_/g,'/');
+    while(b64.length % 4) b64 += '=';
+    var payload = JSON.parse(decodeURIComponent(escape(atob(b64))));
+    Account.setUser({ sub:payload.sub, email:payload.email, name:payload.name, picture:payload.picture, loggedAt:Date.now() });
+    toast('Вы вошли как ' + (payload.email || payload.name));
+    initGoogleSignIn();
+  }catch(e){ toast('Ошибка входа', true); }
+}
+function loadGoogleScript(){
+  if(document.getElementById('gsi-script')) return;
+  var s = document.createElement('script');
+  s.id = 'gsi-script';
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.async = true; s.defer = true;
+  s.onload = function(){ try{ initGoogleSignIn(); }catch(e){} };
+  document.head.appendChild(s);
+}
+
+function wireAccountUI(){
+  try{
+    var btn = $('#btnAccount');
+    if(btn) btn.addEventListener('click', function(){
+      Account.render(); initGoogleSignIn();
+      if(Activation.codes.size <= 9) tryAutoLoadCodes();
+      var m = $('#accountModal'); if(m) m.classList.add('open');
+    });
+    var close = $('#accountClose');
+    if(close) close.addEventListener('click', function(){ var m = $('#accountModal'); if(m) m.classList.remove('open'); });
+    var modal = $('#accountModal');
+    if(modal) modal.addEventListener('click', function(e){ if(e.target === modal) modal.classList.remove('open'); });
+    var btnAct = $('#btnActivate');
+    if(btnAct) btnAct.addEventListener('click', function(){
+      var inp = $('#activationInput'); var st = $('#activationStatus');
+      if(!inp || !st) return;
+      var code = inp.value.trim();
+      if(!code){ st.className='acc-status err'; st.textContent='✕ Введи код активации'; return; }
+      var res = Activation.activate(code);
+      if(res.ok){
+        st.className = 'acc-status ok'; st.textContent = '✓ ' + res.msg;
+        inp.value = ''; Account.render(); toast('Код активирован · безлимит');
+      } else { st.className = 'acc-status err'; st.textContent = '✕ ' + res.msg; }
+    });
+    var inpEl = $('#activationInput');
+    if(inpEl){
+      inpEl.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ e.preventDefault(); var b = $('#btnActivate'); if(b) b.click(); } });
+      inpEl.addEventListener('input', function(e){ var v = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g,''); if(v !== e.target.value) e.target.value = v; });
+    }
+    var impBtn = $('#btnImportCodes'), fileIn = $('#codesFileInput');
+    if(impBtn && fileIn){
+      impBtn.addEventListener('click', function(){ fileIn.click(); });
+      fileIn.addEventListener('change', function(){
+        var f = fileIn.files && fileIn.files[0]; if(!f) return;
+        var reader = new FileReader();
+        reader.onload = function(){
+          var n = Activation.importFromFile(String(reader.result||''));
+          var st = $('#activationStatus');
+          if(st){ st.className = 'acc-status ok'; st.textContent = '✓ Загружено: ' + n.toLocaleString('ru-RU'); }
+          toast('Загружено: ' + n.toLocaleString('ru-RU'));
+        };
+        reader.readAsText(f);
+        fileIn.value = '';
+      });
+    }
+    var relBtn = $('#btnReloadCodes'); if(relBtn) relBtn.addEventListener('click', tryAutoLoadCodes);
+    var clrBtn = $('#btnClearCodes');
+    if(clrBtn) clrBtn.addEventListener('click', function(){
+      if(!confirm('Сбросить коды? Останутся только 9 тестовых.')) return;
+      Activation.clear();
+      var st = $('#activationStatus'); if(st){ st.className='acc-status'; st.textContent=''; }
+      toast('Коды сброшены');
+    });
+    var lo = $('#btnLogout');
+    if(lo) lo.addEventListener('click', function(){
+      if(!confirm('Выйти из аккаунта?')) return;
+      Account.setUser(null); toast('Вы вышли'); initGoogleSignIn();
+    });
+  }catch(e){}
+}
+
+function wireSettingsUI(){
+  try{
+    var btn = $('#btnSettings');
+    if(btn) btn.addEventListener('click', function(){ var m = $('#settingsModal'); if(m) m.classList.add('open'); });
+    var close = $('#settingsClose');
+    if(close) close.addEventListener('click', function(){ var m = $('#settingsModal'); if(m) m.classList.remove('open'); });
+    var modal = $('#settingsModal');
+    if(modal) modal.addEventListener('click', function(e){ if(e.target === modal) modal.classList.remove('open'); });
+    var tiles = $$('.settings-tile[data-open]');
+    for(var i = 0; i < tiles.length; i++){
+      (function(tile){
+        tile.addEventListener('click', function(){
+          var targetId = tile.getAttribute('data-open');
+          var sm = $('#settingsModal'); if(sm) sm.classList.remove('open');
+          setTimeout(function(){
+            if(targetId === 'accountModal'){ Account.render(); initGoogleSignIn(); if(Activation.codes.size <= 9) tryAutoLoadCodes(); }
+            if(targetId === 'paramsModal'){ initParamsUI(); }
+            if(targetId === 'versionModal'){ buildVersionCards(); }
+            var t = $('#' + targetId); if(t) t.classList.add('open');
+          }, 250);
+        });
+      })(tiles[i]);
+    }
+    var aboutTile = $('#stileAbout');
+    if(aboutTile) aboutTile.addEventListener('click', function(){
+      var sm = $('#settingsModal'); if(sm) sm.classList.remove('open');
+      setTimeout(function(){ var am = $('#aboutModal'); if(am) am.classList.add('open'); }, 250);
+    });
+    var aboutClose = $('#aboutClose');
+    if(aboutClose) aboutClose.addEventListener('click', function(){ var m = $('#aboutModal'); if(m) m.classList.remove('open'); });
+    var aboutModal = $('#aboutModal');
+    if(aboutModal) aboutModal.addEventListener('click', function(e){ if(e.target === aboutModal) aboutModal.classList.remove('open'); });
+  }catch(e){}
+}
+/* ============ /ACCOUNT ============ */
+
+var Brain = {
+nodes: {}, edges: [], outgoing: {}, incoming: {}, rules: [], byLabel: {},
+reset: function(){ this.nodes = {}; this.edges = []; this.outgoing = {}; this.incoming = {}; this.rules = []; this.byLabel = {}; },
+addNode: function(id, opts){
+  try{
+    id = String(id == null ? '' : id).trim(); if(!id) return null; if(this.nodes[id]) return id;
+    var o = opts || {};
+    this.nodes[id] = { id:id, label:o.label||id, type:o.type||'concept', weight:typeof o.weight==='number'?o.weight:0.5, context:o.context||'general', degree:0 };
+    this.outgoing[id] = []; this.incoming[id] = [];
+    var norm = normalizeConcept(o.label || id);
+    if(norm){
+      this.byLabel[norm] = id;
+      var firstWord = norm.split(' ')[0];
+      if(firstWord && firstWord.length >= 3 && !this.byLabel[firstWord]) this.byLabel[firstWord] = id;
+    }
+    return id;
+  }catch(e){ return null; }
+},
+addEdge: function(s, r, o, w, ctx){
+  try{
+    s = String(s==null?'':s).trim(); r = String(r==null?'':r).trim(); o = String(o==null?'':o).trim();
+    if(!s||!r||!o) return false;
+    if(!this.nodes[s]) this.addNode(s); if(!this.nodes[o]) this.addNode(o);
+    var idx = this.edges.length;
+    this.edges.push({ s:s, r:r, o:o, w:typeof w==='number'?w:0.5, ctx:ctx||'general' });
+    if(this.outgoing[s]) this.outgoing[s].push(idx);
+    if(this.incoming[o]) this.incoming[o].push(idx);
+    if(this.nodes[s]) this.nodes[s].degree++;
+    if(this.nodes[o]) this.nodes[o].degree++;
+    return true;
+  }catch(e){ return false; }
+},
+addRule: function(rule){ if(rule && (rule.pattern || rule.raw)) this.rules.push(rule); },
+size: function(){ return { nodes:Object.keys(this.nodes).length, edges:this.edges.length, rules:this.rules.length }; },
+allEdgesOf: function(id){
+  var out = []; var o = this.outgoing[id] || []; var i = this.incoming[id] || [];
+  for(var a = 0; a < o.length; a++) out.push({ idx:o[a], dir:'out' });
+  for(var b = 0; b < i.length; b++) out.push({ idx:i[b], dir:'in' });
+  return out;
+},
+findNode: function(text){
+  try{
+    var norm = normalizeConcept(text); if(!norm) return null;
+    if(this.byLabel[norm]) return this.byLabel[norm];
+    var first = norm.split(' ')[0]; if(this.byLabel[first]) return this.byLabel[first];
+    var keys = Object.keys(this.byLabel);
+    for(var i = 0; i < keys.length; i++){ var key = keys[i]; if(key.length < 4) continue; if(norm.indexOf(key) !== -1 || key.indexOf(norm) !== -1) return this.byLabel[key]; }
+    return null;
+  }catch(e){ return null; }
+}
+};
+
+var SEED_KB = [
+'javascript|JavaScript|language|tech','python|Python|language|tech','rust|Rust|language|tech','go|Go|language|tech','typescript|TypeScript|language|tech','cpp|C++|language|tech','csharp|C#|language|tech','java|Java|language|tech','kotlin|Kotlin|language|tech','swift|Swift|language|tech','php|PHP|language|tech','ruby|Ruby|language|tech','scala|Scala|language|tech','haskell|Haskell|language|tech','elixir|Elixir|language|tech','lua|Lua|language|tech','perl|Perl|language|tech','r|R|language|tech','julia|Julia|language|tech','sql|SQL|language|tech','bash|Bash|language|tech','powershell|PowerShell|language|tech','dart|Dart|language|tech','zig|Zig|language|tech','solidity|Solidity|language|tech','assembly|Assembly|language|tech','fortran|Fortran|language|tech','cobol|COBOL|language|tech','objc|Objective-C|language|tech','groovy|Groovy|language|tech','clojure|Clojure|language|tech','erlang|Erlang|language|tech','ocaml|OCaml|language|tech','fsharp|F#|language|tech','prolog|Prolog|language|tech','nim|Nim|language|tech','react|React|library|tech','vue|Vue|library|tech','angular|Angular|framework|tech','svelte|Svelte|framework|tech','nextjs|Next.js|framework|tech','nuxt|Nuxt|framework|tech','django|Django|framework|tech','flask|Flask|framework|tech','fastapi|FastAPI|framework|tech','express|Express|framework|tech','nestjs|NestJS|framework|tech','spring|Spring|framework|tech','laravel|Laravel|framework|tech','rails|Ruby on Rails|framework|tech','jquery|jQuery|library|tech','tailwind|Tailwind|library|tech','bootstrap|Bootstrap|framework|tech','threejs|Three.js|library|tech','d3|D3.js|library|tech','tensorflow|TensorFlow|library|ai','pytorch|PyTorch|library|ai','numpy|NumPy|library|tech','pandas|Pandas|library|tech','nodejs|Node.js|runtime|tech','deno|Deno|runtime|tech','bun|Bun|runtime|tech','electron|Electron|framework|tech','tauri|Tauri|framework|tech','flutter|Flutter|framework|tech','reactnative|React Native|framework|tech','qt|Qt|framework|tech','opengl|OpenGL|api|tech','vulkan|Vulkan|api|tech','postgres|PostgreSQL|database|tech','mysql|MySQL|database|tech','sqlite|SQLite|database|tech','mongodb|MongoDB|database|tech','redis|Redis|database|tech','cassandra|Cassandra|database|tech','elasticsearch|Elasticsearch|database|tech','clickhouse|ClickHouse|database|tech','neo4j|Neo4j|database|tech','firebase|Firebase|baas|tech','supabase|Supabase|baas|tech','kafka|Kafka|tool|tech','git|Git|tool|tech','docker|Docker|tool|tech','kubernetes|Kubernetes|tool|tech','nginx|Nginx|tool|tech','apache|Apache|tool|tech','terraform|Terraform|tool|tech','ansible|Ansible|tool|tech','jenkins|Jenkins|tool|tech','prometheus|Prometheus|tool|tech','grafana|Grafana|tool|tech','vault|Vault|tool|tech','linux|Linux|os|tech','windows|Windows|os|tech','macos|macOS|os|tech','android|Android|os|tech','ios|iOS|os|tech','freebsd|FreeBSD|os|tech','ubuntu|Ubuntu|os|tech','debian|Debian|os|tech','arch|Arch Linux|os|tech','tcp|TCP|protocol|network','udp|UDP|protocol|network','http|HTTP|protocol|network','https|HTTPS|protocol|network','dns|DNS|protocol|network','ip|IP|protocol|network','websocket|WebSocket|protocol|network','rest|REST|architecture|network','graphql|GraphQL|architecture|network','grpc|gRPC|protocol|network','ftp|FTP|protocol|network','smtp|SMTP|protocol|network','ssh|SSH|protocol|network','tls|TLS|protocol|security','ssl|SSL|protocol|security','algorithm|алгоритм|concept|cs','bigo|Big-O|concept|cs','recursion|рекурсия|concept|cs','hashtable|хеш-таблица|structure|cs','array|массив|structure|cs','linkedlist|связный список|structure|cs','tree|дерево|structure|cs','graph|граф|structure|cs','stack|стек|structure|cs','queue|очередь|structure|cs','heap|куча|structure|cs','sorting|сортировка|algorithm|cs','quicksort|быстрая сортировка|algorithm|cs','mergesort|сортировка слиянием|algorithm|cs','bsearch|бинарный поиск|algorithm|cs','bfs|BFS|algorithm|cs','dfs|DFS|algorithm|cs','dijkstra|Дейкстра|algorithm|cs','dp|динамическое программирование|technique|cs','oop|ООП|paradigm|cs','functional|функциональное программирование|paradigm|cs','compiler|компилятор|concept|cs','interpreter|интерпретатор|concept|cs','gc|сборка мусора|concept|cs','jit|JIT|concept|cs','concurrency|параллелизм|concept|cs','async|асинхронность|concept|cs','mutex|мьютекс|primitive|cs','deadlock|дедлок|problem|cs','race|race condition|problem|cs','virtual-memory|виртуальная память|concept|cs','cache|кеш|concept|cs','encryption|шифрование|concept|security','hashfunc|хеширование|concept|security','jwt|JWT|standard|security','oauth|OAuth|standard|security','xss|XSS|attack|security','sqli|SQL-инъекция|attack|security','csrf|CSRF|attack|security','ddos|DDoS|attack|security','phishing|фишинг|attack|security','malware|malware|malware|security','vpn|VPN|tool|security','mfa|MFA|technique|security','aes|AES|cipher|security','rsa|RSA|cipher|security','sha|SHA-256|hash|security','owasp|OWASP|standard|security','pentest|pentest|practice|security','firewall|firewall|tool|security','neural|нейросеть|model|ai','ml|машинное обучение|field|ai','dl|глубокое обучение|field|ai','ai|искусственный интеллект|field|ai','llm|LLM|model|ai','transformer|трансформер|architecture|ai','attention|attention|mechanism|ai','tokenization|токенизация|technique|ai','embedding|embedding|technique|ai','rag|RAG|technique|ai','finetune|fine-tuning|technique|ai','prompt|промпт-инжиниринг|technique|ai','cnn|CNN|model|ai','rnn|RNN|model|ai','lstm|LSTM|model|ai','gan|GAN|model|ai','diffusion|diffusion|model|ai','rl|обучение с подкреплением|paradigm|ai','backprop|backpropagation|algorithm|ai','gd|градиентный спуск|algorithm|ai','overfit|переобучение|problem|ai','dropout|dropout|technique|ai','cuda|CUDA|platform|ai','cv|компьютерное зрение|field|ai','nlp|обработка естественного языка|field|ai','gpt|GPT|model|ai','claude|Claude|model|ai','gemini|Gemini|model|ai','llama|LLaMA|model|ai','mistral|Mistral|model|ai','deepseek|DeepSeek|model|ai','stablediffusion|Stable Diffusion|model|ai','dalle|DALL-E|model|ai','midjourney|Midjourney|model|ai','physics|физика|field|science','chemistry|химия|field|science','biology|биология|field|science','math|математика|field|science','astronomy|астрономия|field|science','medicine|медицина|field|science','psychology|психология|field|science','quantum|квантовая механика|field|physics','relativity|теория относительности|theory|physics','entropy|энтропия|concept|physics','gravity|гравитация|force|physics','light|свет|phenomenon|physics','sound|звук|phenomenon|physics','electricity|электричество|phenomenon|physics','magnetism|магнетизм|phenomenon|physics','energy|энергия|concept|physics','atom|атом|object|chemistry','molecule|молекула|object|chemistry','proton|протон|particle|chemistry','neutron|нейтрон|particle|chemistry','electron|электрон|particle|chemistry','dna|ДНК|molecule|biology','rna|РНК|molecule|biology','gene|ген|unit|biology','evolution|эволюция|process|biology','photosynthesis|фотосинтез|process|biology','cell|клетка|object|biology','virus|вирус|object|biology','bacteria|бактерия|object|biology','brain|мозг|organ|biology','heart|сердце|organ|biology','blood|кровь|substance|biology','blackhole|чёрная дыра|object|astronomy','bigbang|Большой взрыв|theory|astronomy','darkmatter|тёмная материя|concept|astronomy','galaxy|галактика|object|astronomy','solar|Солнечная система|system|astronomy','sun|Солнце|star|astronomy','moon|Луна|moon|astronomy','earth|Земля|planet|astronomy','mars|Марс|planet|astronomy','jupiter|Юпитер|planet|astronomy','saturn|Сатурн|planet|astronomy','water|вода|substance|chemistry','air|воздух|substance|chemistry','fire|огонь|phenomenon|physics','climate|климат|system|science','history|история|field|humanities','rome|Древний Рим|civilization|history','greece|Древняя Греция|civilization|history','egypt|Древний Египет|civilization|history','ww1|Первая мировая война|event|history','ww2|Вторая мировая война|event|history','coldwar|Холодная война|event|history','einstein|Альберт Эйнштейн|person|history','darwin|Чарльз Дарвин|person|history','newton|Исаак Ньютон|person|history','gagarin|Юрий Гагарин|person|history','russia|Россия|country|geo','usa|США|country|geo','china|Китай|country|geo','japan|Япония|country|geo','germany|Германия|country|geo','france|Франция|country|geo','uk|Великобритания|country|geo','italy|Италия|country|geo','moscow|Москва|city|geo','petersburg|Санкт-Петербург|city|geo','london|Лондон|city|geo','paris|Париж|city|geo','tokyo|Токио|city|geo','philosophy|философия|field|humanities','socrates|Сократ|person|philosophy','plato|Платон|person|philosophy','aristotle|Аристотель|person|philosophy','economy|экономика|field|humanities','inflation|инфляция|concept|economy','gdp|ВВП|concept|economy','market|рынок|concept|economy','music|музыка|art|culture','mozart|Моцарт|person|music','beethoven|Бетховен|person|music','tchaikovsky|Чайковский|person|music','literature|литература|field|culture','shakespeare|Шекспир|person|literature','tolstoy|Толстой|person|literature','dostoevsky|Достоевский|person|literature','pushkin|Пушкин|person|literature','art|искусство|field|culture','davinci|Леонардо да Винчи|person|art','michelangelo|Микеланджело|person|art','picasso|Пикассо|person|art','vangogh|Ван Гог|person|art','monalisa|Мона Лиза|work|art','cinema|кинематограф|field|culture','nolan|Кристофер Нолан|person|cinema','tarantino|Тарантино|person|cinema','spielberg|Спилберг|person|cinema','inception|Начало|film|cinema','interstellar|Интерстеллар|film|cinema','matrix|Матрица|film|cinema','sport|спорт|field|life','football|футбол|sport|sports','basketball|баскетбол|sport|sports','hockey|хоккей|sport|sports','chess|шахматы|game|sports','food|еда|field|life','coffee|кофе|drink|food','tea|чай|drink|food','pizza|пицца|dish|food','health|здоровье|field|life','fitness|фитнес|field|life','sleep|сон|process|life','diet|диета|practice|life',
+'javascript|is-a|language|0.98|general','python|is-a|language|0.98|general','rust|is-a|language|0.98|general','go|is-a|language|0.98|general','typescript|is-a|language|0.98|general','cpp|is-a|language|0.98|general','csharp|is-a|language|0.98|general','java|is-a|language|0.98|general','kotlin|is-a|language|0.98|general','swift|is-a|language|0.98|general','php|is-a|language|0.98|general','ruby|is-a|language|0.98|general','react|is-a|library|0.95|general','vue|is-a|library|0.95|general','angular|is-a|framework|0.95|general','svelte|is-a|framework|0.95|general','django|is-a|framework|0.95|general','flask|is-a|framework|0.95|general','fastapi|is-a|framework|0.95|general','express|is-a|framework|0.95|general','postgres|is-a|database|0.97|general','mysql|is-a|database|0.97|general','sqlite|is-a|database|0.97|general','mongodb|is-a|database|0.97|general','redis|is-a|database|0.95|general','git|is-a|tool|0.97|general','docker|is-a|tool|0.95|general','kubernetes|is-a|tool|0.95|general','linux|is-a|os|0.98|general','windows|is-a|os|0.98|general','macos|is-a|os|0.98|general','android|is-a|os|0.98|general','tcp|is-a|protocol|0.97|network','udp|is-a|protocol|0.97|network','http|is-a|protocol|0.97|network','https|is-a|protocol|0.97|network','algorithm|is-a|concept|0.95|cs','recursion|is-a|concept|0.9|cs','hashtable|is-a|structure|0.95|cs','array|is-a|structure|0.95|cs','oop|is-a|paradigm|0.97|cs','functional|is-a|paradigm|0.97|cs','encryption|is-a|concept|0.92|security','malware|is-a|malware|0.9|security','neural|is-a|model|0.95|ai','ml|is-a|field|0.98|ai','dl|is-a|field|0.97|ai','ai|is-a|field|0.98|ai','llm|is-a|model|0.98|ai','transformer|is-a|architecture|0.97|ai','attention|is-a|mechanism|0.95|ai','cnn|is-a|model|0.95|ai','rnn|is-a|model|0.95|ai','physics|is-a|field|0.98|science','chemistry|is-a|field|0.98|science','biology|is-a|field|0.98|science','math|is-a|field|0.98|science','history|is-a|field|0.98|humanities','philosophy|is-a|field|0.98|humanities','literature|is-a|field|0.97|culture','art|is-a|field|0.97|culture','cinema|is-a|field|0.97|culture','music|is-a|art|0.95|culture','sport|is-a|field|0.97|life','food|is-a|field|0.95|life',
+'javascript|used-for|frontend|0.97|practical','javascript|used-for|backend|0.88|practical','python|used-for|datascience|0.97|practical','python|used-for|ml|0.97|practical','python|used-for|backend|0.92|practical','rust|used-for|systems|0.97|practical','go|used-for|microservices|0.95|practical','java|used-for|enterprise|0.97|practical','react|used-for|ui|0.97|practical','django|written-in|python|0.98|tech','nodejs|uses-language|javascript|0.98|tech','nodejs|used-for|backend|0.95|practical','postgres|has-feature|acid|0.95|technical','postgres|used-for|backend|0.95|practical','redis|used-for|cache|0.97|practical','docker|used-for|containers|0.98|practical','kubernetes|used-for|orchestration|0.98|practical','git|used-for|version-control|0.99|practical','linux|used-for|servers|0.97|practical','linux|has-feature|open-source|0.98|technical','android|based-on|linux|0.98|tech','tcp|has-feature|reliable|0.98|technical','tcp|has-feature|ordered|0.98|technical','udp|has-feature|fast|0.98|technical','udp|similar-to|tcp|0.9|cmp','http|based-on|tcp|0.95|tech','http|used-for|web|0.98|practical','https|based-on|tls|0.98|tech','websocket|has-feature|bidirectional|0.98|technical','oop|has-principle|encapsulation|0.97|tech','oop|has-principle|inheritance|0.97|tech','oop|has-principle|polymorphism|0.97|tech','recursion|requires|base-case|0.98|tech','algorithm|measured-by|bigo|0.95|tech','hashtable|has-complexity|o1|0.95|tech','stack|has-principle|lifo|0.98|tech','queue|has-principle|fifo|0.98|tech','compiler|produces|binary|0.95|tech','gc|frees|memory|0.98|tech','jit|compiles|runtime|0.95|tech','mutex|prevents|race|0.97|tech','deadlock|result-of|mutex|0.9|tech','encryption|protects|data|0.97|security','jwt|used-for|auth|0.98|practical','oauth|used-for|auth|0.98|practical','tls|secures|http|0.97|tech','xss|attack-on|web|0.97|security','sqli|attack-on|database|0.98|security','csrf|attack-on|web|0.95|security','mfa|improves|security|0.97|tech','neural|part-of|ml|0.98|ai','ml|part-of|ai|0.98|ai','dl|part-of|ml|0.97|ai','llm|based-on|transformer|0.98|ai','transformer|uses|attention|0.98|ai','cnn|used-for|vision|0.97|ai','backprop|trains|neural|0.98|ai','physics|studies|matter|0.97|science','chemistry|studies|molecule|0.95|science','biology|studies|cell|0.95|science','math|used-by|physics|0.95|science','relativity|authored-by|einstein|0.98|history','evolution|proposed-by|darwin|0.98|history','dna|stores|gene|0.98|biology','photosynthesis|uses|light|0.95|biology','brain|controls|body|0.97|biology','heart|pumps|blood|0.98|biology','solar|contains|sun|0.98|astronomy','sun|is-a|star|0.98|astronomy','moon|orbits|earth|0.98|astronomy','earth|orbits|sun|0.98|astronomy','moscow|capital-of|russia|0.98|geo','london|capital-of|uk|0.98|geo','paris|capital-of|france|0.98|geo','tokyo|capital-of|japan|0.98|geo','socrates|teacher-of|plato|0.98|philosophy','plato|teacher-of|aristotle|0.98|philosophy','inflation|reduces|purchasing-power|0.97|economy','gdp|measures|economy|0.97|economy','shakespeare|wrote|hamlet|0.98|literature','tolstoy|wrote|warpeace|0.98|literature','dostoevsky|wrote|crime|0.98|literature','davinci|painted|monalisa|0.98|art','monalisa|housed-in|louvre|0.98|art','nolan|directed|inception|0.97|cinema','nolan|directed|interstellar|0.97|cinema','coffee|contains|caffeine|0.98|food','pizza|originated-in|italy|0.97|food','health|requires|sleep|0.97|life','fitness|requires|exercise|0.97|life'
+];
+
+var SEED_RULES = [
+{ id:'transitivity-is-a', pattern:{ p1:'is-a', p2:'is-a' }, conclusion:'is-a' },
+{ id:'inherits-feature', pattern:{ p1:'is-a', p2:'has-feature' }, conclusion:'has-feature' },
+{ id:'inherits-use', pattern:{ p1:'is-a', p2:'used-for' }, conclusion:'used-for' },
+{ id:'sibling-detect', pattern:{ p1:'is-a', p2:'is-a' }, conclusion:'similar-to' },
+{ id:'shared-feature', pattern:{ p1:'has-feature', p2:'has-feature' }, conclusion:'similar-to' },
+{ id:'used-by-similar', pattern:{ p1:'used-for', p2:'used-for' }, conclusion:'similar-to' },
+{ id:'located-transitive', pattern:{ p1:'located-in', p2:'located-in' }, conclusion:'located-in' }
+];
+
+function loadSeedBrain(){
+  try{
+    Brain.reset();
+    for(var i = 0; i < SEED_KB.length; i++){
+      var line = SEED_KB[i]; if(!line) continue;
+      var parts = String(line).split('|');
+      if(parts.length === 4) Brain.addNode(parts[0], { label:parts[1], type:parts[2], context:parts[3], weight:0.6 });
+    }
+    for(var j = 0; j < SEED_KB.length; j++){
+      var l = SEED_KB[j]; if(!l) continue;
+      var p = String(l).split('|');
+      if(p.length === 5){
+        var s = p[0], r = p[1], o = p[2];
+        var w = parseFloat(p[3]) || 0.5;
+        var ctx = p[4] || 'general';
+        if(!Brain.nodes[o]) Brain.addNode(o, { label:o });
+        Brain.addEdge(s, r, o, w, ctx);
+      }
+    }
+    for(var k = 0; k < SEED_RULES.length; k++) Brain.addRule(SEED_RULES[k]);
+    updateBrainStats();
+  }catch(e){}
+}
+
+function updateBrainStats(){
+  try{
+    var s = Brain.size();
+    var el1 = $('#bNodes'); if(el1) el1.textContent = s.nodes.toLocaleString('ru-RU');
+    var el2 = $('#bEdges'); if(el2) el2.textContent = s.edges.toLocaleString('ru-RU');
+    var el3 = $('#bRules'); if(el3) el3.textContent = s.rules.length.toLocaleString('ru-RU');
+  }catch(e){}
+}
+
+function classifyIntent(text){
+  var s = String(text || '').toLowerCase().trim();
+  if(/^(нарисуй|сгенерируй|создай|покажи|нарисовать|сделай|изобрази|начерти|draw|generate|paint|render)\s+/i.test(s)) return 'image';
+  if(/^(картинк|изображен|рисунок|арт|логотип|иллюстрац|постер|обои|фото|портрет)/i.test(s)) return 'image';
+  if(/(нарисуй|сгенерируй|нарисовать|изобрази)/i.test(s) && /(картинк|изображен|рисунок|арт|логотип|иллюстрац|постер)/i.test(s)) return 'image';
+  if(/^(привет|здравствуй|хай|hello|hi|добрый (день|вечер|утро)|йо|ку)\b/.test(s)) return 'greeting';
+  if(/(кто ты|что ты|как тебя зовут|ты кто|расскажи о себе|представься)/.test(s)) return 'identity';
+  if(/(что ты умеешь|что умеешь|помощь|help|команды|возможности|что можешь)/.test(s)) return 'capabilities';
+  if(/(какая (у тебя )?версия|твоя версия|какая версия|версия модели)/.test(s)) return 'version';
+  if(/(который час|сколько времени|какое число|какая дата|сегодняшняя дата|день недели|какой сегодня)/.test(s)) return 'time';
+  if(/^\s*\d+\s*[\+\-\*\/\^×÷%]/i.test(s) || /^(посчитай|вычисли|реши)\s+/i.test(s)) return 'math';
+  if(/(сравни|сравнить|разница|отличие|различия|vs|versus|чем отличается)/.test(s)) return 'compare';
+  if(/(почему|зачем|причина|причины|отчего)/.test(s)) return 'why';
+  if(/(как работает|как устроен|как устроено|механизм|принцип работы|как действует)/.test(s)) return 'how';
+  if(/(как (сделать|приготовить|использовать|начать|установить|настроить|запустить))/i.test(s)) return 'procedural';
+  if(/(что такое|определение|означает|значение|что значит)/.test(s)) return 'definition';
+  if(/(сколько|какой размер|какая длина|какая высота)/.test(s)) return 'quantity';
+  if(/(кто такой|кто такая|кто такое)/.test(s)) return 'who';
+  if(/(где находится|где расположен)/.test(s)) return 'where';
+  if(/(когда|в каком году|в каком веке)/.test(s)) return 'when';
+  if(/(пример|примеры|приведи|покажи на примере)/.test(s)) return 'example';
+  if(/(плюсы|минусы|преимущества|недостатки|за и против|pros|cons)/.test(s)) return 'proscons';
+  if(/(список|перечисли|перечислить|какие бывают|какие есть)/.test(s)) return 'list';
+  if(/(объясни|объяснить|расскажи|рассказать)/.test(s)) return 'explain';
+  return 'general';
+}
+
+function tokenizeWords(text){
+  var t = String(text || '').toLowerCase();
+  t = t.replace(/ё/g, 'е');
+  return t.split(/[^\p{L}\p{N}\-]+/u).filter(function(w){ return w.length > 1; });
+}
+
+function extractConcepts(text){
+  try{
+    var words = tokenizeWords(text);
+    var concepts = []; var seen = new Set();
+    for(var len = 3; len >= 1; len--){
+      for(var i = 0; i + len <= words.length; i++){
+        var chunk = words.slice(i, i + len).join(' ');
+        var node = Brain.findNode(chunk);
+        if(node && !seen.has(node)){ seen.add(node); concepts.push({ id:node, label:Brain.nodes[node]?Brain.nodes[node].label:node, weight:1.0/len, source:'graph' }); }
+      }
+    }
+    if(!concepts.length){
+      for(var j = 0; j < words.length; j++){ var w = words[j]; if(w.length < 3) continue; concepts.push({ id:w, label:w, weight:0.5, source:'raw' }); }
+    }
+    concepts.sort(function(a, b){ return b.weight - a.weight; });
+    var result = []; var used = new Set();
+    for(var k = 0; k < concepts.length; k++){ if(used.has(concepts[k].id)) continue; used.add(concepts[k].id); result.push(concepts[k]); }
+    return result.slice(0, 8);
+  }catch(e){ return []; }
+}
+
+var WorkingMemory = {
+items: [], maxSize: 12,
+add: function(concept){
+  try{
+    if(!concept) return;
+    this.items = this.items.filter(function(c){ return c.id !== concept.id; });
+    this.items.unshift({ id:concept.id, label:concept.label, weight:concept.weight, t:Date.now() });
+    if(this.items.length > this.maxSize) this.items = this.items.slice(0, this.maxSize);
+    renderWorkingMemory();
+  }catch(e){}
+},
+clear: function(){ this.items = []; renderWorkingMemory(); }
+};
+
+function renderWorkingMemory(){
+  try{
+    var panel = $('#wmPanel'); var itemsEl = $('#wmItems');
+    if(!panel || !itemsEl) return;
+    if(WorkingMemory.items.length === 0){ panel.style.display = 'none'; return; }
+    panel.style.display = 'block';
+    var html = '';
+    for(var i = 0; i < WorkingMemory.items.length; i++) html += '<span class="wm-item">' + esc(WorkingMemory.items[i].label) + '</span>';
+    itemsEl.innerHTML = html;
+  }catch(e){}
+}
+
+function spreadActivation(seedConcepts, opts){
+  try{
+    var o = opts || {};
+    var maxDepth = typeof o.depth === 'number' ? o.depth : Parameters.get('reasoning_depth');
+    var decay = typeof o.decay === 'number' ? o.decay : Parameters.get('activation_decay');
+    var activation = {}; var path = {}; var frontier = [];
+    for(var i = 0; i < seedConcepts.length; i++){
+      var sc = seedConcepts[i];
+      if(!Brain.nodes[sc.id]) continue;
+      activation[sc.id] = (activation[sc.id] || 0) + sc.weight;
+      path[sc.id] = [];
+      frontier.push({ id:sc.id, depth:0, act:sc.weight });
+    }
+    var iterations = 0;
+    while(frontier.length && iterations < 3000){
+      iterations++;
+      var cur = frontier.shift();
+      if(cur.depth >= maxDepth) continue;
+      var edges = Brain.allEdgesOf(cur.id);
+      for(var e = 0; e < edges.length; e++){
+        var edge = Brain.edges[edges[e].idx]; if(!edge) continue;
+        var next = edges[e].dir === 'out' ? edge.o : edge.s;
+        if(!Brain.nodes[next]) continue;
+        var gain = cur.act * edge.w * decay;
+        if(gain < 0.04) continue;
+        activation[next] = (activation[next] || 0) + gain;
+        if(!path[next]) path[next] = path[cur.id].concat([edge]);
+        frontier.push({ id:next, depth:cur.depth + 1, act:gain });
+      }
+    }
+    return Object.keys(activation).map(function(id){ return { id:id, act:activation[id], path:path[id] || [] }; }).sort(function(a, b){ return b.act - a.act; });
+  }catch(e){ return []; }
+}
+
+function runInference(activationList, opts){
+  try{
+    var o = opts || {};
+    var maxDerived = typeof o.maxDerived === 'number' ? o.maxDerived : Parameters.get('max_derived');
+    var minConf = Parameters.get('confidence_threshold');
+    var derived = []; var bySubject = {};
+    for(var i = 0; i < activationList.length; i++){
+      var node = activationList[i];
+      var edges = Brain.allEdgesOf(node.id);
+      for(var e = 0; e < edges.length; e++){
+        var edge = Brain.edges[edges[e].idx]; if(!edge) continue;
+        var subj = edges[e].dir === 'out' ? edge.s : edge.o;
+        var obj = edges[e].dir === 'out' ? edge.o : edge.s;
+        if(!bySubject[subj]) bySubject[subj] = [];
+        bySubject[subj].push({ r:edge.r, other:obj, w:edge.w });
+      }
+    }
+    for(var subj in bySubject){
+      var outgoing = bySubject[subj];
+      for(var k = 0; k < outgoing.length; k++){
+        if(outgoing[k].r !== 'is-a') continue;
+        var mid = outgoing[k].other;
+        var midOut = bySubject[mid] || [];
+        for(var m = 0; m < midOut.length; m++){
+          if(midOut[m].r !== 'is-a') continue;
+          var target = midOut[m].other;
+          var exists = false;
+          for(var x = 0; x < outgoing.length; x++){ if(outgoing[x].r === 'is-a' && outgoing[x].other === target){ exists = true; break; } }
+          if(!exists && target !== subj){
+            var conf = outgoing[k].w * midOut[m].w * 0.85;
+            if(conf < minConf) continue;
+            derived.push({ type:'transitivity', s:subj, r:'is-a', o:target, confidence:conf });
+            if(derived.length >= maxDerived) return derived;
+          }
+        }
+      }
+    }
+    for(var subj2 in bySubject){
+      var out2 = bySubject[subj2];
+      for(var n = 0; n < out2.length; n++){
+        if(out2[n].r !== 'is-a') continue;
+        var parent = out2[n].other;
+        var parentOut = bySubject[parent] || [];
+        for(var p = 0; p < parentOut.length; p++){
+          var feat = parentOut[p];
+          if(feat.r === 'is-a') continue;
+          var already = false;
+          for(var q = 0; q < out2.length; q++){ if(out2[q].r === feat.r && out2[q].other === feat.other){ already = true; break; } }
+          if(already) continue;
+          var conf2 = out2[n].w * feat.w * 0.8;
+          if(conf2 < minConf) continue;
+          derived.push({ type:'inheritance', s:subj2, r:feat.r, o:feat.other, confidence:conf2 });
+          if(derived.length >= maxDerived) return derived;
+        }
+      }
+    }
+    return derived;
+  }catch(e){ return []; }
+}
+
+function factsFor(nodeId, max){
+  var out = [];
+  try{
+    var edges = Brain.allEdgesOf(nodeId);
+    for(var i = 0; i < edges.length && out.length < max; i++){
+      var e = Brain.edges[edges[i].idx]; if(!e) continue;
+      if(edges[i].dir === 'out'){ var lbl = Brain.nodes[e.o] ? Brain.nodes[e.o].label : e.o; out.push({ rel:e.r, target:lbl, w:e.w }); }
+    }
+  }catch(err){}
+  return out;
+}
+
+function commonFacts(aId, bId){
+  var common = [];
+  try{
+    var aFacts = {}; var aEdges = Brain.allEdgesOf(aId);
+    for(var i = 0; i < aEdges.length; i++){
+      var e = Brain.edges[aEdges[i].idx]; if(!e || aEdges[i].dir !== 'out') continue;
+      aFacts[e.r + '::' + e.o] = e.r.replace(/-/g, ' ') + ' ' + (Brain.nodes[e.o] ? Brain.nodes[e.o].label : e.o);
+    }
+    var bEdges = Brain.allEdgesOf(bId);
+    for(var j = 0; j < bEdges.length; j++){
+      var e2 = Brain.edges[bEdges[j].idx]; if(!e2 || bEdges[j].dir !== 'out') continue;
+      var key = e2.r + '::' + e2.o;
+      if(aFacts[key]) common.push(aFacts[key]);
+    }
+    var aParents = {}, bParents = {};
+    for(var k = 0; k < aEdges.length; k++){ var e3 = Brain.edges[aEdges[k].idx]; if(e3 && aEdges[k].dir === 'out' && e3.r === 'is-a') aParents[e3.o] = Brain.nodes[e3.o] ? Brain.nodes[e3.o].label : e3.o; }
+    for(var l = 0; l < bEdges.length; l++){ var e4 = Brain.edges[bEdges[l].idx]; if(e4 && bEdges[l].dir === 'out' && e4.r === 'is-a') bParents[e4.o] = Brain.nodes[e4.o] ? Brain.nodes[e4.o].label : e4.o; }
+    for(var p in aParents){ if(bParents[p] && common.indexOf('оба — ' + aParents[p]) === -1) common.push('оба — ' + aParents[p]); }
+  }catch(e){}
+  return common;
+}
+
+function differences(aId, bId){
+  var out = [];
+  try{
+    var aSet = {}; var aEdges = Brain.allEdgesOf(aId);
+    for(var i = 0; i < aEdges.length; i++){
+      var e = Brain.edges[aEdges[i].idx]; if(!e || aEdges[i].dir !== 'out') continue;
+      aSet[e.r + '::' + e.o] = true;
+    }
+    var bEdges = Brain.allEdgesOf(bId);
+    for(var j = 0; j < bEdges.length && out.length < 5; j++){
+      var e2 = Brain.edges[bEdges[j].idx]; if(!e2 || bEdges[j].dir !== 'out') continue;
+      var key = e2.r + '::' + e2.o;
+      if(!aSet[key]) out.push({ subject:Brain.nodes[bId]?Brain.nodes[bId].label:bId, rel:e2.r, target:Brain.nodes[e2.o]?Brain.nodes[e2.o].label:e2.o });
+    }
+  }catch(e){}
+  return out;
+}
+
+function generateHypotheses(question, intent, concepts, activationList, derivedFacts, version){
+  var hypotheses = [];
+  var maxH = Math.min(Parameters.get('top_k'), (VERSIONS[version] && VERSIONS[version].maxHypotheses) || 5);
+  try{
+    if(concepts.length > 0){
+      var main = concepts[0];
+      var facts = factsFor(main.id, 6);
+      if(facts.length) hypotheses.push({ id:'H1', kind:'definition', conf:0.8, main:main.label, facts:facts.slice(0, 4) });
+    }
+    if(concepts.length >= 2 && (intent === 'compare' || intent === 'general')){
+      var a = concepts[0].id, b = concepts[1].id;
+      var common = commonFacts(a, b); var diffs = differences(a, b);
+      if(common.length || diffs.length) hypotheses.push({ id:'H2', kind:'comparison', conf:0.9, a:Brain.nodes[a]?Brain.nodes[a].label:a, b:Brain.nodes[b]?Brain.nodes[b].label:b, common:common, diffs:diffs });
+    }
+    if(intent === 'how' || intent === 'why' || intent === 'procedural'){
+      var howFacts = [];
+      for(var i = 0; i < concepts.length; i++){
+        var ci = concepts[i]; var edges = Brain.allEdgesOf(ci.id);
+        for(var e = 0; e < edges.length; e++){
+          var edge = Brain.edges[edges[e].idx]; if(!edge || edges[e].dir !== 'out') continue;
+          if(['has-feature','uses','requires','based-on','used-for','enables','related-to'].indexOf(edge.r) !== -1){
+            howFacts.push({ subject:Brain.nodes[ci.id]?Brain.nodes[ci.id].label:ci.label, rel:edge.r, target:Brain.nodes[edge.o]?Brain.nodes[edge.o].label:edge.o });
+          }
+        }
+      }
+      if(howFacts.length) hypotheses.push({ id:'H3', kind:'reasoning', conf:0.85, facts:howFacts.slice(0, 6) });
+    }
+    if(derivedFacts.length) hypotheses.push({ id:'H4', kind:'inference', conf:0.75, derived:derivedFacts.slice(0, 4) });
+    if(activationList.length >= 3){
+      var chains = [];
+      for(var j = 1; j < Math.min(8, activationList.length); j++){
+        var node = activationList[j]; var ed = Brain.allEdgesOf(node.id);
+        if(ed.length === 0) continue;
+        var edg = Brain.edges[ed[0].idx]; if(!edg) continue;
+        chains.push({ s:Brain.nodes[edg.s]?Brain.nodes[edg.s].label:edg.s, r:edg.r, o:Brain.nodes[edg.o]?Brain.nodes[edg.o].label:edg.o });
+      }
+      if(chains.length) hypotheses.push({ id:'H5', kind:'association', conf:0.65, chains:chains.slice(0, 5) });
+    }
+    return hypotheses.slice(0, maxH);
+  }catch(e){ return hypotheses.slice(0, maxH); }
+}
+
+function hypothesisToText(h){
+  try{
+    if(h.kind === 'definition' && h.facts){ var out = ''; for(var i = 0; i < h.facts.length; i++) out += h.facts[i].rel.replace(/-/g, ' ') + ' ' + h.facts[i].target + ', '; return h.main + ': ' + out.slice(0, -2) + '.'; }
+    if(h.kind === 'comparison' && h.a && h.b){ var s = h.a + ' и ' + h.b + '. '; if(h.common && h.common.length) s += 'Общее: ' + h.common.slice(0, 4).join(', ') + '.'; if(h.diffs && h.diffs.length) s += ' Различия: ' + h.diffs.slice(0, 3).map(function(d){ return d.rel + ' ' + d.target; }).join(', ') + '.'; return s; }
+    if(h.kind === 'reasoning' && h.facts){ var s2 = ''; for(var j = 0; j < h.facts.length; j++) s2 += h.facts[j].subject + ' ' + h.facts[j].rel.replace(/-/g, ' ') + ' ' + h.facts[j].target + '. '; return s2; }
+    if(h.kind === 'inference' && h.derived){ var s3 = ''; for(var k = 0; k < h.derived.length; k++){ var d = h.derived[k]; s3 += (Brain.nodes[d.s]?Brain.nodes[d.s].label:d.s) + ' ' + d.r + ' ' + (Brain.nodes[d.o]?Brain.nodes[d.o].label:d.o) + '. '; } return s3; }
+    if(h.kind === 'association' && h.chains){ var s4 = ''; for(var m = 0; m < h.chains.length; m++) s4 += h.chains[m].s + ' ' + h.chains[m].r.replace(/-/g, ' ') + ' ' + h.chains[m].o + '. '; return s4; }
+    return '';
+  }catch(e){ return ''; }
+}
+
+function evaluateHypotheses(hypotheses, question, concepts){
+  var temperature = Parameters.get('temperature'); var repPenalty = Parameters.get('repetition_penalty');
+  for(var i = 0; i < hypotheses.length; i++){
+    var h = hypotheses[i]; var score = 0;
+    var textRepr = hypothesisToText(h);
+    var qWords = new Set(tokenizeWords(question)); var hWords = tokenizeWords(textRepr);
+    var overlap = 0;
+    for(var w = 0; w < hWords.length; w++) if(qWords.has(hWords[w])) overlap++;
+    score += overlap * 0.15;
+    var conceptHits = 0;
+    for(var c = 0; c < concepts.length; c++) if(textRepr.toLowerCase().indexOf(concepts[c].label.toLowerCase()) !== -1) conceptHits++;
+    score += conceptHits * 0.3;
+    score += h.conf * 0.5;
+    var wordCount = {};
+    for(var ww = 0; ww < hWords.length; ww++) wordCount[hWords[ww]] = (wordCount[hWords[ww]] || 0) + 1;
+    var repPenaltyFactor = 0;
+    for(var key in wordCount){ if(wordCount[key] > 1) repPenaltyFactor += (wordCount[key] - 1) * 0.02; }
+    score -= repPenaltyFactor * (repPenalty - 1) * 10;
+    var len = textRepr.length;
+    if(len < 40) score -= 0.2; else if(len > 700) score -= 0.15;
+    if(h.kind === 'comparison') score += 0.15;
+    if(h.kind === 'definition') score += 0.05;
+    if(h.kind === 'reasoning') score += 0.1;
+    score += (Math.random() - 0.5) * temperature * 0.3;
+    h.score = score; h.text = textRepr;
+  }
+  hypotheses.sort(function(a, b){ return b.score - a.score; });
+  return hypotheses;
+}
+
+async function searchWikipedia(query, lang){
+  try{
+    var url = 'https://' + lang + '.wikipedia.org/w/api.php?action=query&list=search&srsearch=' + encodeURIComponent(query) + '&format=json&origin=*&srlimit=2&srprop=snippet';
+    var r = await fetchWithTimeout(url, {}, 8000); if(!r.ok) return [];
+    var j = await r.json(); var results = (j.query && j.query.search) || []; var out = [];
+    for(var i = 0; i < results.length; i++){
+      var title = results[i].title;
+      try{
+        var sUrl = 'https://' + lang + '.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(title);
+        var sr = await fetchWithTimeout(sUrl, {}, 8000); if(!sr.ok) continue;
+        var sj = await sr.json();
+        if(sj && sj.extract) out.push({ source:'Wikipedia ' + lang.toUpperCase(), title:sj.title || title, text:cut(sj.extract, 600), url:(sj.content_urls && sj.content_urls.desktop && sj.content_urls.desktop.page) || '' });
+      }catch(e){}
+    }
+    return out;
+  }catch(e){ return []; }
+}
+async function searchDuckDuckGo(query){
+  try{
+    var url = 'https://api.duckduckgo.com/?q=' + encodeURIComponent(query) + '&format=json&no_html=1&skip_disambig=1&t=onyx';
+    var r = await fetchWithTimeout(url, {}, 8000); if(!r.ok) return [];
+    var j = await r.json(); var out = [];
+    var text = j.AbstractText || j.Definition || j.Answer || '';
+    if(text && text.length > 40) out.push({ source:'DuckDuckGo', title:j.Heading || query, text:cut(text, 600), url:j.AbstractURL || '' });
+    return out;
+  }catch(e){ return []; }
+}
+async function searchStackExchange(query){
+  try{
+    var url = 'https://api.stackexchange.com/2.3/search/advanced?order=desc&sort=relevance&pagesize=2&q=' + encodeURIComponent(query) + '&site=stackoverflow&filter=withbody';
+    var r = await fetchWithTimeout(url, {}, 9000); if(!r.ok) return [];
+    var j = await r.json(); if(j.backoff) return [];
+    var items = j.items || []; var out = [];
+    for(var i = 0; i < items.length; i++){
+      var q = items[i]; var title = stripHtml(q.title || ''); var body = cut(stripHtml(q.body || ''), 500);
+      if(!title || body.length < 60) continue;
+      out.push({ source:'Stack Overflow', title:title, text:body, url:q.link || '' });
+    }
+    return out;
+  }catch(e){ return []; }
+}
+async function searchAllWebSources(query){
+  try{
+    var results = await Promise.allSettled([searchWikipedia(query, 'ru'), searchWikipedia(query, 'en'), searchDuckDuckGo(query), searchStackExchange(query)]);
+    var combined = [];
+    for(var i = 0; i < results.length; i++){ if(results[i].status === 'fulfilled' && results[i].value) combined = combined.concat(results[i].value); }
+    return combined;
+  }catch(e){ return []; }
+}
+
+function buildImagePrompt(userPrompt){
+  var p = String(userPrompt || '').trim();
+  p = p.replace(/^(нарисуй|сгенерируй|создай|покажи|сделай|нарисовать|изобрази|начерти|draw|generate|paint|create image|render)\s+/i, '').trim();
+  if(!p) p = 'abstract art, colorful composition';
+  return 'masterpiece, highly detailed, professional quality, ' + p + ', sharp focus, vibrant colors, intricate details';
+}
+function generateImageUrl(userPrompt){
+  var finalPrompt = buildImagePrompt(userPrompt); var seed = rndInt(1, 999999);
+  return 'https://image.pollinations.ai/prompt/' + encodeURIComponent(finalPrompt) + '?width=1024&height=1024&seed=' + seed + '&nologo=true&enhance=true&model=flux';
+}
+function generateAltImageUrl(userPrompt){
+  var finalPrompt = buildImagePrompt(userPrompt); var seed = rndInt(1, 999999);
+  return 'https://image.pollinations.ai/prompt/' + encodeURIComponent(finalPrompt) + '?width=1024&height=1024&seed=' + seed + '&nologo=true';
+}
+
+function buildStructuredAnswer(intent, concepts, hypotheses, derived, webResults, version){
+  var parts = [];
+  var maxLen = Parameters.get('max_tokens') || 3000;
+  var structured = Parameters.get('structured_output');
+  if(intent === 'greeting') return 'Привет! Я OnyX — нейросеть от CodeXY Labs ™, созданная LumiXeN. Умею рассуждать по графу знаний, искать в открытых источниках, рисовать изображения и объединять всё в один ответ. Задай вопрос или попроси нарисовать что-нибудь.';
+  if(intent === 'identity') return 'Я OnyX — нейросеть от CodeXY Labs ™ (разработчик LumiXeN, 2026). Работаю на reasoning-движке: строю граф знаний, применяю правила вывода, генерирую гипотезы, объединяю Wikipedia, Stack Overflow и DuckDuckGo. Могу генерировать изображения.';
+  if(intent === 'capabilities') return 'Что я умею:\n• Отвечать на вопросы — от программирования до истории и искусства\n• Рассуждать по шагам и показывать ход мыслей\n• Искать в Wikipedia (RU/EN), Stack Overflow, DuckDuckGo\n• Генерировать изображения по описанию\n• Сравнивать, объяснять механизмы, приводить примеры\n• Считать математические выражения\n• Настраивать temperature, top_p, top_k\n\nЧтобы нарисовать — напиши «нарисуй закат над морем» или нажми 🎨.';
+  if(intent === 'version'){ var meta = VERSIONS[version]; return 'Сейчас активна модель ' + meta.name + '.\n• Глубина анализа: ' + meta.depth + ' уровня графа\n• Гипотезы: ' + meta.maxHypotheses + '\n• Веб-источники: ' + (meta.useWeb ? 'включены' : 'отключены') + '\n• Изображения: ' + (meta.useImages ? 'включены' : 'отключены'); }
+  if(intent === 'time'){ var d = new Date(); var days = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота']; var months = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря']; return 'Сегодня ' + d.getDate() + ' ' + months[d.getMonth()] + ' ' + d.getFullYear() + ', ' + days[d.getDay()] + '. Время: ' + d.toLocaleTimeString('ru-RU', {hour:'2-digit', minute:'2-digit'}) + '.'; }
+  if(intent === 'math'){ var expr = String(concepts[0] ? concepts[0].label : '').trim(); if(expr){ var res = evalMath(expr); if(res !== null){ var pretty = Math.round(res * 1000000) / 1000000; return 'Результат: ' + expr + ' = ' + pretty; } } return 'Не удалось распознать выражение. Пример: 128 * 46 + 9.'; }
+  if(!hypotheses.length && !webResults.length) return fallbackAnswer(concepts);
+  var H = function(title){ if(structured) parts.push('\n**' + title + '**\n'); };
+  var LI = function(text){ parts.push(structured ? '• ' + text : text); };
+  if(intent === 'definition' && concepts.length >= 1){
+    H('Определение');
+    var main = concepts[0]; var mainFacts = factsFor(main.id, 6); var parent = null;
+    for(var i = 0; i < mainFacts.length; i++){ if(mainFacts[i].rel === 'is-a'){ parent = mainFacts[i].target; break; } }
+    var defLine = '';
+    if(parent){
+      defLine = main.label + ' — это ' + parent + ', ';
+      var feats = [];
+      for(var j = 0; j < mainFacts.length; j++){ if(mainFacts[j].rel === 'has-feature') feats.push(mainFacts[j].target); }
+      if(feats.length) defLine += 'который имеет: ' + feats.slice(0, 4).join(', ') + '.';
+      else defLine = defLine.slice(0, -2) + '.';
+    } else if(mainFacts.length) defLine = main.label + ' — ' + mainFacts.slice(0, 3).map(function(f){ return f.rel.replace(/-/g,' ') + ' ' + f.target; }).join(', ') + '.';
+    else defLine = main.label + ' — понятие из моей базы знаний.';
+    parts.push(defLine);
+    var uses = [], feats2 = [], rels = [];
+    for(var u = 0; u < mainFacts.length; u++){
+      if(mainFacts[u].rel === 'used-for') uses.push(mainFacts[u].target);
+      else if(mainFacts[u].rel === 'has-feature') feats2.push(mainFacts[u].target);
+      else if(mainFacts[u].rel === 'related-to' || mainFacts[u].rel === 'similar-to') rels.push(mainFacts[u].target);
+    }
+    if(uses.length){ H('Применение'); parts.push('Используется для: ' + uses.slice(0, 4).join(', ') + '.'); }
+    if(feats2.length){ H('Особенности'); parts.push('Обладает признаками: ' + feats2.slice(0, 4).join(', ') + '.'); }
+    if(rels.length){ H('Связанные понятия'); parts.push(rels.slice(0, 5).join(', ') + '.'); }
+  }
+  else if(intent === 'compare' && concepts.length >= 2){
+    H('Сравнение');
+    var a = concepts[0], b = concepts[1];
+    parts.push('Сравниваю: ' + a.label + ' и ' + b.label + '.');
+    var common = commonFacts(a.id, b.id); var diffs = differences(a.id, b.id);
+    if(common.length){ H('Что общего'); for(var c = 0; c < Math.min(common.length, 5); c++) LI(common[c]); }
+    if(diffs.length){ H('Чем отличаются'); for(var dd = 0; dd < Math.min(diffs.length, 5); dd++) LI(diffs[dd].subject + ' ' + diffs[dd].rel.replace(/-/g,' ') + ' ' + diffs[dd].target); }
+  }
+  else if(intent === 'how' || intent === 'why' || intent === 'procedural'){
+    H(intent === 'why' ? 'Причина' : 'Как это работает');
+    var mainHow = concepts[0];
+    if(mainHow){
+      var howFacts = factsFor(mainHow.id, 8); var mechanism = [];
+      for(var hf = 0; hf < howFacts.length; hf++){
+        var rel = howFacts[hf].rel;
+        if(['uses','requires','based-on','has-feature','enables','part-of'].indexOf(rel) !== -1) mechanism.push({ s:mainHow.label, r:rel, o:howFacts[hf].target });
+      }
+      if(mechanism.length){ for(var m = 0; m < mechanism.length; m++) LI(mechanism[m].s + ' ' + mechanism[m].r.replace(/-/g,' ') + ' ' + mechanism[m].o); }
+      else parts.push('По графу знаний прямых связей недостаточно. Использую внешние источники.');
+    }
+  }
+  else if(intent === 'proscons'){
+    H('Плюсы и минусы');
+    var mainPC = concepts[0];
+    if(mainPC){
+      var pros = [], cons = []; var pcEdges = Brain.allEdgesOf(mainPC.id);
+      for(var pe = 0; pe < pcEdges.length; pe++){
+        var pedg = Brain.edges[pcEdges[pe].idx]; if(!pedg || pcEdges[pe].dir !== 'out') continue;
+        if(['has-feature','enables','improves','used-for'].indexOf(pedg.r) !== -1) pros.push(pedg.r.replace(/-/g,' ') + ' ' + (Brain.nodes[pedg.o] ? Brain.nodes[pedg.o].label : pedg.o));
+        if(['requires','prevents'].indexOf(pedg.r) !== -1) cons.push(pedg.r.replace(/-/g,' ') + ' ' + (Brain.nodes[pedg.o] ? Brain.nodes[pedg.o].label : pedg.o));
+      }
+      if(pros.length){ H('Преимущества'); for(var pr = 0; pr < Math.min(pros.length, 5); pr++) LI(pros[pr]); }
+      if(cons.length){ H('Ограничения'); for(var co = 0; co < Math.min(cons.length, 5); co++) LI(cons[co]); }
+    }
+  }
+  else {
+    if(hypotheses.length){
+      var best = hypotheses[0];
+      H('Суть'); parts.push(best.text);
+      if(hypotheses.length > 1 && hypotheses[1].kind !== best.kind){ H('Дополнение'); parts.push(hypotheses[1].text); }
+    }
+  }
+  if(derived.length && parts.length){
+    H('Логический вывод');
+    var deduped = []; var seenDer = {};
+    for(var di = 0; di < derived.length && deduped.length < 4; di++){
+      var d2 = derived[di]; var key = d2.s + '::' + d2.r + '::' + d2.o;
+      if(seenDer[key]) continue; seenDer[key] = true;
+      deduped.push('• ' + (Brain.nodes[d2.s] ? Brain.nodes[d2.s].label : d2.s) + ' ' + d2.r.replace(/-/g,' ') + ' ' + (Brain.nodes[d2.o] ? Brain.nodes[d2.o].label : d2.o));
+    }
+    if(deduped.length) parts.push(deduped.join('\n'));
+  }
+  if(webResults && webResults.length){
+    H('Из открытых источников');
+    var seenTexts = {}; var shown = 0;
+    for(var w = 0; w < webResults.length && shown < 4; w++){
+      var r2 = webResults[w]; if(!r2 || !r2.text) continue;
+      var h2 = hashStr(r2.text.slice(0, 80));
+      if(seenTexts[h2]) continue; seenTexts[h2] = true;
+      var line2 = '• ' + r2.source;
+      if(r2.title) line2 += ' — ' + trim(r2.title, 70);
+      line2 += '\n  ' + trim(r2.text, 300);
+      parts.push(line2); shown++;
+    }
+  }
+  if(parts.length > 2 && structured){
+    H('Итог');
+    var summary = '';
+    if(concepts.length === 1){ summary = concepts[0].label + ' — понятие, о котором я собрал информацию из графа знаний'; if(webResults.length) summary += ' и ' + webResults.length + ' внешних источников'; summary += '.'; }
+    else if(concepts.length >= 2) summary = 'Сравнение ' + concepts[0].label + ' и ' + concepts[1].label + ' показало их сходства и различия.';
+    else summary = 'Ответ собран из графа знаний' + (webResults.length ? ' и открытых источников' : '') + '.';
+    parts.push(summary);
+  }
+  var result = parts.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+  if(!result) result = fallbackAnswer(concepts);
+  if(result.length > maxLen) result = cut(result, maxLen);
+  return result;
+}
+
+function fallbackAnswer(concepts){
+  if(!concepts.length) return 'Не нашёл концепции из вопроса в базе знаний. Попробуй переформулировать — или спроси о программировании, науке, истории, искусстве.';
+  var main = concepts[0]; var facts = factsFor(main.id, 4);
+  if(facts.length){ var lines = ['Вот что я знаю о ' + main.label + ':']; for(var i = 0; i < facts.length; i++) lines.push('• ' + facts[i].rel.replace(/-/g,' ') + ' ' + facts[i].target); return lines.join('\n'); }
+  return 'Знаю о ' + main.label + ', но связей для точного ответа недостаточно.';
+}
+
+function reflectOnAnswer(answer, concepts, derivedFacts, webResults){
+  var issues = [];
+  try{ if(!answer || answer.length < 60) issues.push('ответ короткий'); if(!looksLikeRussian(answer)) issues.push('не на русском'); }catch(e){}
+  var confidence = 0.5;
+  if(concepts.length >= 1) confidence += 0.1;
+  if(derivedFacts.length) confidence += 0.1;
+  if(webResults && webResults.length) confidence += 0.2;
+  if(issues.length === 0) confidence += 0.1;
+  return { confidence:clamp(confidence, 0.2, 0.95), issues:issues };
+}
+
+function fmtInline(text){
+  var safe = esc(text);
+  safe = safe.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+  safe = safe.replace(/`([^`]+)`/g, '<span class="code">$1</span>');
+  return safe;
+}
+
+function streamText(ui, text, onDone){
+  try{
+    ui.content.innerHTML = '';
+    var node = document.createElement('div');
+    node.style.whiteSpace = 'pre-wrap';
+    ui.content.appendChild(node);
+    var tokens = String(text).split(''); var i = 0; var buf = '';
+    ui.cancelled = false;
+    var temperature = Parameters.get('temperature'); var baseDelay = 14;
+    if(temperature > 1.2) baseDelay = 10; else if(temperature < 0.4) baseDelay = 18;
+    var timer = setInterval(function(){
+      if(ui.cancelled){ clearInterval(timer); return; }
+      var step = rndInt(3, 6);
+      for(var k = 0; k < step && i < tokens.length; k++){ buf += tokens[i]; i++; }
+      node.innerHTML = fmtInline(buf); scrollChat();
+      if(i >= tokens.length){ clearInterval(timer); node.innerHTML = fmtInline(text); scrollChat(); if(onDone) onDone(); }
+    }, baseDelay);
+  }catch(e){ if(onDone) onDone(); }
+}
+
+function evalMath(expr){
+  try{
+    var s = String(expr).replace(/,/g, '.').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-');
+    if(!/^[\d\s+\-*/()^.%]+$/.test(s)) return null;
+    var r = Function('"use strict"; return (' + s + ')')();
+    if(typeof r !== 'number' || !isFinite(r)) return null;
+    return r;
+  }catch(e){ return null; }
+}
+
+var chats = [];
+var currentChatId = null;
+var busy = false;
+var runId = 0;
+var showReasoning = true;
+var currentVersion = '4.3';
+var imageMode = false;
+
+function saveState(){ try{ localStorage.setItem('onyx_state_v17', JSON.stringify({ version:currentVersion, showReasoning:showReasoning })); }catch(e){} }
+function loadState(){ try{ var r = localStorage.getItem('onyx_state_v17'); if(r){ var p = JSON.parse(r); if(p && p.version && VERSIONS[p.version]) currentVersion = p.version; if(p && typeof p.showReasoning === 'boolean') showReasoning = p.showReasoning; } }catch(e){} }
+function saveChats(){ try{ localStorage.setItem('onyx_chats_v17', JSON.stringify(chats)); }catch(e){} }
+function loadChats(){ try{ var r = localStorage.getItem('onyx_chats_v17'); if(r) chats = JSON.parse(r) || []; if(!Array.isArray(chats)) chats = []; }catch(e){ chats = []; } }
+function currentChat(){ for(var i = 0; i < chats.length; i++) if(chats[i].id === currentChatId) return chats[i]; return null; }
+function createNewChat(silent){
+  try{
+    runId++; busy = false; setSendDisabled(false);
+    var chat = { id:uid(), title:'Новый чат', created:Date.now(), messages:[] };
+    chats.unshift(chat); currentChatId = chat.id;
+    saveChats(); renderHistory(); clearChatView(); showWelcome(); WorkingMemory.clear(); closeSidebar();
+    if(!silent) toast('Новый чат');
+  }catch(e){}
+}
+function clearAllHistory(){
+  try{
+    if(!chats.length){ toast('История пуста'); return; }
+    runId++; busy = false; setSendDisabled(false);
+    chats = []; saveChats(); createNewChat(true); toast('История очищена');
+  }catch(e){}
+}
+function clearChatView(){ try{ var msgs = $$('#chat .msg'); for(var i = 0; i < msgs.length; i++) if(msgs[i].parentNode) msgs[i].parentNode.removeChild(msgs[i]); }catch(e){} }
+function openChat(id){
+  try{
+    var chat = null;
+    for(var i = 0; i < chats.length; i++) if(chats[i].id === id) chat = chats[i];
+    if(!chat) return;
+    runId++; busy = false; setSendDisabled(false);
+    currentChatId = id; renderHistory(); clearChatView(); WorkingMemory.clear();
+    if(!chat.messages.length){ showWelcome(); closeSidebar(); return; }
+    hideWelcome();
+    var frag = document.createDocumentFragment();
+    for(var j = 0; j < chat.messages.length; j++){
+      var m = chat.messages[j]; if(!m) continue;
+      if(m.role === 'user') frag.appendChild(buildUserMsg(m.text));
+      else{
+        var pair = buildAiMsg(); clearTyping(pair.ui);
+        pair.ui.content.innerHTML = fmtInline(m.text || '');
+        if(m.imageUrl) addImageNode(pair.ui, m.imageUrl, m.imagePrompt || '', false);
+        if(showReasoning && m.reasoning) renderReasoningBlock(pair.ui, m.reasoning);
+        if(m.sources && m.sources.length) addSources(pair.ui, m.sources);
+        setTokenStats(pair.ui, m.inTok || 0, m.outTok || 0, m.thinkTok || 0);
+        frag.appendChild(pair.el);
+      }
+    }
+    chatEl().appendChild(frag); scrollChat(); closeSidebar();
+  }catch(e){}
+}
+function deleteChat(id){
+  try{
+    chats = chats.filter(function(c){ return c.id !== id; });
+    if(currentChatId === id){ if(chats.length) openChat(chats[0].id); else createNewChat(true); }
+    saveChats(); renderHistory();
+  }catch(e){}
+}
+function renderHistory(){
+  try{
+    var list = $('#history'); if(!list) return;
+    list.innerHTML = '';
+    if(!chats.length){ list.innerHTML = '<div class="history-empty">история пуста<br>нажми ＋</div>'; return; }
+    var frag = document.createDocumentFragment();
+    for(var i = 0; i < Math.min(chats.length, 60); i++){
+      (function(c){
+        var item = document.createElement('div');
+        item.className = 'history-item' + (c.id === currentChatId ? ' active' : '');
+        item.innerHTML = '<span class="history-dot"></span><span class="history-title">' + esc(c.title) + '</span><button class="history-del">✕</button>';
+        item.addEventListener('click', function(){ openChat(c.id); });
+        var delBtn = item.querySelector('.history-del');
+        if(delBtn) delBtn.addEventListener('click', function(e){ e.stopPropagation(); deleteChat(c.id); toast('Чат удалён'); });
+        frag.appendChild(item);
+      })(chats[i]);
+    }
+    list.appendChild(frag);
+  }catch(e){}
+}
+function chatEl(){ return $('#chat'); }
+function hideWelcome(){ var w = $('#welcome'); if(w) w.style.display = 'none'; }
+function showWelcome(){ var w = $('#welcome'); if(w) w.style.display = 'flex'; }
+function scrollChat(){ try{ var c = chatEl(); if(c) c.scrollTop = c.scrollHeight; }catch(e){} }
+function setSendDisabled(v){ var b = $('#send'); if(b) b.disabled = v; }
+
+function buildUserMsg(text){
+  var inTok = countTokens(text);
+  var wrap = document.createElement('div');
+  wrap.className = 'msg user';
+  wrap.innerHTML = '<div class="avatar"><span class="adot"></span></div><div class="bubble"><div class="meta"><span class="mver">ты</span><span>' + nowTime() + '</span></div><div class="content">' + fmtInline(text) + '</div><div class="tokens"><span class="t-block t-tok">Токенов: <b>' + inTok + '</b></span><span class="t-sep">·</span><span class="t-block t-cost">Стоимость: <b>' + formatCost(inTok) + '</b></span></div></div>';
+  return wrap;
+}
+function buildAiMsg(){
+  var v = VERSIONS[currentVersion] || VERSIONS['4.3'];
+  var wrap = document.createElement('div');
+  wrap.className = 'msg ai';
+  wrap.innerHTML = '<div class="avatar"><span class="adot"></span></div><div class="bubble"><div class="meta"><span class="mver">' + esc(v.short) + '</span><span>' + nowTime() + '</span></div><ul class="reasoning" style="display:none"></ul><div class="content"><span class="typing"><span></span><span></span><span></span></span></div><div class="sources"></div><div class="tokens" style="display:none"></div></div>';
+  var bubble = wrap.querySelector('.bubble');
+  return { el:wrap, ui:{ bubble:bubble, reasoning:bubble.querySelector('.reasoning'), content:bubble.querySelector('.content'), sources:bubble.querySelector('.sources'), tokens:bubble.querySelector('.tokens') } };
+}
+function addStage(ui, label){
+  try{
+    ui.reasoning.style.display = 'flex';
+    var li = document.createElement('li');
+    li.className = 'rstage';
+    li.innerHTML = '<span class="icon"></span><span class="lbl">' + esc(label) + '</span>';
+    ui.reasoning.appendChild(li); scrollChat(); return li;
+  }catch(e){ return null; }
+}
+function doneStage(li, warn){ if(!li) return; li.classList.add(warn ? 'warn' : 'done'); scrollChat(); }
+function clearTyping(ui){ try{ var t = ui.content.querySelector('.typing'); if(t) t.remove(); }catch(e){} }
+function renderReasoningBlock(ui, reasoning){
+  try{
+    if(!reasoning || !reasoning.length) return;
+    ui.reasoning.style.display = 'flex'; ui.reasoning.innerHTML = '';
+    for(var i = 0; i < reasoning.length; i++){
+      var li = document.createElement('li');
+      li.className = 'rstage done';
+      li.innerHTML = '<span class="icon"></span><span class="lbl">' + esc(reasoning[i]) + '</span>';
+      ui.reasoning.appendChild(li);
+    }
+  }catch(e){}
+}
+function addSources(ui, list){
+  try{
+    if(!list || !list.length) return;
+    var frag = document.createDocumentFragment();
+    for(var i = 0; i < list.length; i++){
+      var s = list[i];
+      var a = document.createElement(s.url ? 'a' : 'span');
+      a.className = 'src-chip';
+      a.innerHTML = '<span class="sdot"></span>' + esc(s.label);
+      if(s.url){ a.href = s.url; a.target = '_blank'; a.rel = 'noopener'; }
+      frag.appendChild(a);
+    }
+    ui.sources.appendChild(frag); scrollChat();
+  }catch(e){}
+}
+function setTokenStats(ui, inTok, outTok, thinkTok){
+  try{
+    var total = (inTok || 0) + (outTok || 0) + (thinkTok || 0);
+    ui.tokens.style.display = 'flex';
+    var html = '';
+    if(inTok) html += '<span class="t-block t-in">↑ ' + inTok + '</span>';
+    if(outTok) html += '<span class="t-block t-out">↓ ' + outTok + '</span>';
+    if(thinkTok) html += '<span class="t-block t-think">⚙ ' + thinkTok + '</span>';
+    html += '<span class="t-block t-tok">Токенов: <b>' + total + '</b></span><span class="t-sep">·</span><span class="t-block t-cost">Стоимость: <b>' + formatCost(total) + '</b></span>';
+    ui.tokens.innerHTML = html;
+  }catch(e){}
+}
+function addImageNode(ui, url, prompt, animate){
+  try{
+    var wrap = document.createElement('div');
+    wrap.className = 'ai-image-wrap' + (animate ? ' loading' : '');
+    wrap.setAttribute('data-loading', 'Нейросеть рисует…');
+    var img = document.createElement('img');
+    img.alt = prompt || 'OnyX image';
+    img.dataset.retries = '0';
+    img.onload = function(){ wrap.classList.remove('loading'); scrollChat(); };
+    img.onerror = function(){
+      var retries = parseInt(img.dataset.retries || '0', 10);
+      if(retries < 2){
+        img.dataset.retries = String(retries + 1);
+        wrap.setAttribute('data-loading', 'Повторная попытка ' + (retries + 1) + '…');
+        setTimeout(function(){ try{ img.src = generateAltImageUrl(prompt) + '&retry=' + retries; }catch(e){} }, 500);
+        return;
+      }
+      wrap.classList.remove('loading');
+      wrap.innerHTML = '<div class="img-err"><b>Не удалось загрузить изображение</b>Сервер генерации перегружен. Попробуй ещё раз через минуту.</div>';
+      scrollChat();
+    };
+    img.addEventListener('click', function(){ openLightbox(url); });
+    img.src = url;
+    wrap.appendChild(img);
+    ui.bubble.appendChild(wrap); scrollChat();
+  }catch(e){}
+}
+function openLightbox(url){ var lb = $('#lightbox'); var img = $('#lightboxImg'); if(!lb || !img) return; img.src = url; lb.classList.add('open'); }
+function closeLightbox(){ var lb = $('#lightbox'); if(lb) lb.classList.remove('open'); }
+
+async function handleSend(raw){
+  var text = String(raw || '').trim();
+  if(!text || busy) return;
+  if(!Account.canSend()){
+    toast('Лимит исчерпан (' + Account.getDailyLimit() + '/день). Войди через Google или активируй код.', true);
+    Account.render(); initGoogleSignIn();
+    var m = $('#accountModal'); if(m) m.classList.add('open');
+    return;
+  }
+  Account.incrementUsage();
+  busy = true;
+  setSendDisabled(true);
+  var myRun = runId;
+  try{
+    hideWelcome();
+    chatEl().appendChild(buildUserMsg(text));
+    scrollChat();
+    var chat = currentChat();
+    if(chat){ chat.messages.push({ role:'user', text:text }); if(chat.title === 'Новый чат'){ chat.title = trim(text, 34); renderHistory(); } }
+    var pair = buildAiMsg();
+    chatEl().appendChild(pair.el);
+    scrollChat();
+    var ui = pair.ui;
+    var inTok = countTokens(text);
+    var reasoningLog = [];
+    var thinkBuf = '';
+    var version = currentVersion;
+    var vmeta = VERSIONS[version] || VERSIONS['4.3'];
+    var st1 = addStage(ui, 'Понимаю вопрос…');
+    await sleep(rndInt(160, 280));
+    if(myRun !== runId) return;
+    var intent = classifyIntent(text);
+    var concepts = extractConcepts(text);
+    var conceptNames = concepts.map(function(c){ return c.label; }).join(', ');
+    doneStage(st1);
+    reasoningLog.push('Тип вопроса: ' + intent);
+    reasoningLog.push('Концепции: ' + (conceptNames || 'не найдены'));
+    thinkBuf += 'понимание ';
+    for(var i = 0; i < concepts.length; i++) WorkingMemory.add(concepts[i]);
+    var forceImage = imageMode || intent === 'image';
+    if(forceImage){
+      imageMode = false; updateImageBtn();
+      var useImg = Parameters.get('use_images') && vmeta.useImages;
+      if(!useImg){
+        var ansImOff = 'Генерация изображений сейчас отключена. Включи её в параметрах (🎛) или смени модель на 3.1+.';
+        clearTyping(ui);
+        await new Promise(function(resolve){ streamText(ui, ansImOff, resolve); });
+        if(myRun !== runId) return;
+        var offTok = countTokens(ansImOff);
+        setTokenStats(ui, inTok, offTok, 0);
+        if(chat){ chat.messages.push({ role:'ai', text:ansImOff, inTok:inTok, outTok:offTok, thinkTok:0 }); saveChats(); }
+        return;
+      }
+      var stImg = addStage(ui, 'Нейросеть рисует изображение…');
+      await sleep(rndInt(300, 500));
+      if(myRun !== runId) return;
+      var imgUrl = generateImageUrl(text);
+      clearTyping(ui);
+      ui.content.innerHTML = 'Готово — вот что получилось:';
+      doneStage(stImg);
+      reasoningLog.push('Изображение сгенерировано');
+      addImageNode(ui, imgUrl, text, true);
+      if(showReasoning) renderReasoningBlock(ui, reasoningLog);
+      var imgAns = 'Готово — вот что получилось:';
+      var imgOutTok = countTokens(imgAns);
+      setTokenStats(ui, inTok, imgOutTok, 0);
+      if(chat){ chat.messages.push({ role:'ai', text:imgAns, imageUrl:imgUrl, imagePrompt:text, reasoning:reasoningLog, inTok:inTok, outTok:imgOutTok, thinkTok:0 }); saveChats(); renderHistory(); }
+      return;
+    }
+    if(intent === 'math'){
+      var expr = text.replace(/^(посчитай|вычисли|реши)\s+/i, '').trim();
+      var res = evalMath(expr);
+      var mathAns = '';
+      if(res !== null){ var pretty = Math.round(res * 1000000) / 1000000; mathAns = 'Результат: ' + expr + ' = ' + pretty; }
+      else mathAns = 'Не удалось распознать выражение. Пример: 128 * 46 + 9.';
+      clearTyping(ui);
+      await new Promise(function(resolve){ streamText(ui, mathAns, resolve); });
+      if(myRun !== runId) return;
+      var mathTok = countTokens(mathAns);
+      setTokenStats(ui, inTok, mathTok, 0);
+      if(chat) chat.messages.push({ role:'ai', text:mathAns, inTok:inTok, outTok:mathTok, thinkTok:0 });
+      saveChats();
+      return;
+    }
+    if(intent === 'greeting' || intent === 'identity' || intent === 'capabilities' || intent === 'version' || intent === 'time'){
+      var simpleAns = buildStructuredAnswer(intent, concepts, [], [], [], version);
+      clearTyping(ui);
+      await new Promise(function(resolve){ streamText(ui, simpleAns, resolve); });
+      if(myRun !== runId) return;
+      var simpleTok = countTokens(simpleAns);
+      setTokenStats(ui, inTok, simpleTok, 0);
+      if(chat) chat.messages.push({ role:'ai', text:simpleAns, inTok:inTok, outTok:simpleTok, thinkTok:0 });
+      saveChats();
+      return;
+    }
+    var st2 = addStage(ui, 'Активирую связанные узлы графа…');
+    await sleep(rndInt(200, 380));
+    if(myRun !== runId) return;
+    var activation = spreadActivation(concepts, { depth:Math.min(vmeta.depth, Parameters.get('reasoning_depth')), decay:Parameters.get('activation_decay') });
+    doneStage(st2, activation.length === 0);
+    reasoningLog.push('Активировано узлов: ' + activation.length);
+    thinkBuf += 'активация ';
+    var st3 = addStage(ui, 'Применяю правила вывода…');
+    await sleep(rndInt(180, 340));
+    if(myRun !== runId) return;
+    var derived = runInference(activation, { maxDerived:Parameters.get('max_derived') });
+    doneStage(st3);
+    reasoningLog.push('Выведено фактов: ' + derived.length);
+    thinkBuf += 'вывод ';
+    var st4 = addStage(ui, 'Формирую гипотезы ответа…');
+    await sleep(rndInt(180, 320));
+    if(myRun !== runId) return;
+    var hypotheses = generateHypotheses(text, intent, concepts, activation, derived, version);
+    doneStage(st4, hypotheses.length === 0);
+    reasoningLog.push('Гипотез: ' + hypotheses.length);
+    thinkBuf += 'гипотезы ';
+    var st5 = addStage(ui, 'Оцениваю гипотезы…');
+    await sleep(rndInt(140, 260));
+    if(myRun !== runId) return;
+    hypotheses = evaluateHypotheses(hypotheses, text, concepts);
+    doneStage(st5);
+    if(hypotheses.length) reasoningLog.push('Лучшая: ' + hypotheses[0].id + ' — ' + (hypotheses[0].score * 100).toFixed(0) + '%');
+    thinkBuf += 'оценка ';
+    var webResults = []; var srcList = [];
+    var useWeb = Parameters.get('use_web') && vmeta.useWeb;
+    if(useWeb){
+      var st6 = addStage(ui, 'Ищу в Wikipedia · Stack Overflow · DuckDuckGo…');
+      await sleep(rndInt(150, 280));
+      if(myRun !== runId) return;
+      try{ webResults = await searchAllWebSources(text); }catch(e){}
+      doneStage(st6, webResults.length === 0);
+      reasoningLog.push('Источников: ' + webResults.length);
+      var seenSrc = {};
+      for(var w = 0; w < webResults.length; w++){
+        var src = webResults[w].source;
+        if(!seenSrc[src]){ seenSrc[src] = true; srcList.push({ label:src, url:webResults[w].url || '' }); }
+      }
+      thinkBuf += 'поиск ';
+    }
+    var st7 = addStage(ui, 'Синтезирую структурированный ответ…');
+    await sleep(rndInt(180, 320));
+    if(myRun !== runId) return;
+    var answer = buildStructuredAnswer(intent, concepts, hypotheses, derived, webResults, version);
+    doneStage(st7);
+    thinkBuf += 'синтез ';
+    var st8 = addStage(ui, 'Проверяю связность и полноту…');
+    await sleep(rndInt(140, 240));
+    if(myRun !== runId) return;
+    var reflection = reflectOnAnswer(answer, concepts, derived, webResults);
+    doneStage(st8, reflection.issues.length > 0);
+    if(reflection.issues.length) reasoningLog.push('Замечания: ' + reflection.issues.join(', '));
+    else reasoningLog.push('Проверка пройдена · уверенность ' + (reflection.confidence * 100).toFixed(0) + '%');
+    thinkBuf += 'проверка';
+    clearTyping(ui);
+    await new Promise(function(resolve){ streamText(ui, answer, resolve); });
+    if(myRun !== runId) return;
+    if(showReasoning) renderReasoningBlock(ui, reasoningLog);
+    for(var c = 0; c < Math.min(concepts.length, 2); c++) srcList.push({ label:concepts[c].label });
+    if(derived.length) srcList.push({ label:'вывод по графу' });
+    if(srcList.length) addSources(ui, srcList);
+    var outTok = countTokens(answer);
+    var thinkTok = countTokens(thinkBuf);
+    setTokenStats(ui, inTok, outTok, thinkTok);
+    if(chat){ chat.messages.push({ role:'ai', text:answer, reasoning:reasoningLog, sources:srcList, inTok:inTok, outTok:outTok, thinkTok:thinkTok }); saveChats(); renderHistory(); }
+  }catch(e){
+    try{ var pair2 = buildAiMsg(); chatEl().appendChild(pair2.el); clearTyping(pair2.ui); pair2.ui.content.innerHTML = fmtInline('Произошла ошибка. Попробуй ещё раз.'); }catch(err){}
+  }finally{ busy = false; setSendDisabled(false); }
+}
+
+function toast(text, isErr){
+  try{
+    var box = $('#toastBox'); if(!box) return;
+    var el = document.createElement('div');
+    el.className = 'toast' + (isErr ? ' err' : '');
+    el.innerHTML = '<span class="tdot"></span>' + esc(text);
+    box.appendChild(el);
+    setTimeout(function(){ el.classList.add('out'); setTimeout(function(){ if(el.parentNode) el.parentNode.removeChild(el); }, 380); }, 2600);
+  }catch(e){}
+}
+
+function openSidebar(){ try{ var sb = $('#sidebar'); var bd = $('#sidebarBackdrop'); if(sb) sb.classList.add('open'); if(bd){ bd.style.display='block'; setTimeout(function(){ bd.classList.add('show'); }, 10); } }catch(e){} }
+function closeSidebar(){ try{ var sb = $('#sidebar'); var bd = $('#sidebarBackdrop'); if(sb) sb.classList.remove('open'); if(bd){ bd.classList.remove('show'); setTimeout(function(){ bd.style.display='none'; }, 400); } }catch(e){} }
+function toggleSidebar(){
+  try{
+    var sb = $('#sidebar'); if(!sb) return;
+    if(window.innerWidth <= 820){ if(sb.classList.contains('open')) closeSidebar(); else openSidebar(); }
+    else sb.style.display = (sb.style.display === 'none') ? 'flex' : 'none';
+  }catch(e){}
+}
+function autoGrow(){ try{ var inp = $('#input'); if(!inp) return; inp.style.height = 'auto'; inp.style.height = Math.min(140, inp.scrollHeight) + 'px'; }catch(e){} }
+
+function buildVersionCards(){
+  try{
+    var wrap = $('#versionCards'); if(!wrap) return;
+    wrap.innerHTML = '';
+    var order = ['4.3','4.2','4.0','3.1','2.5'];
+    for(var i = 0; i < order.length; i++){
+      (function(key){
+        var meta = VERSIONS[key]; if(!meta) return;
+        var card = document.createElement('div');
+        var cls = 'vcard';
+        if(meta.cls === 'ultimate') cls += ' ultimate';
+        if(key === currentVersion) cls += ' selected';
+        card.className = cls; card.setAttribute('data-version', key);
+        var feats = '';
+        if(key === '2.5') feats = '<li>Краткие ответы</li><li>Только граф знаний</li><li>Без интернета</li>';
+        else if(key === '3.1') feats = '<li>Граф знаний</li><li>Wikipedia + DuckDuckGo</li><li>Изображения</li>';
+        else if(key === '4.0') feats = '<li>Глубокий анализ</li><li>+ Stack Overflow</li><li>4 гипотезы</li>';
+        else if(key === '4.2') feats = '<li>Глубина графа 3</li><li>Все источники</li><li>Самопроверка</li>';
+        else feats = '<li>Все источники</li><li>8 гипотез</li><li>Структурированные ответы</li><li>Объединение в итог</li>';
+        card.innerHTML = '<div class="vcard-head"><span class="vcard-dot"></span><span class="vcard-name">' + esc(meta.name) + '</span></div><div class="vcard-tag">' + esc(meta.tagline) + '</div><ul class="vcard-feats">' + feats + '</ul>';
+        card.addEventListener('click', function(){ applyVersion(key); var m = $('#versionModal'); if(m) m.classList.remove('open'); toast('Активна модель ' + meta.name); });
+        wrap.appendChild(card);
+      })(order[i]);
+    }
+  }catch(e){}
+}
+function applyVersion(key){
+  try{
+    if(!VERSIONS[key]) return;
+    currentVersion = key;
+    var meta = VERSIONS[key];
+    var bv = $('#brandVer'); if(bv){ bv.textContent = meta.badge; bv.className = 'brand-ver' + (meta.cls === 'ultimate' ? ' ultimate' : ''); }
+    var vl = $('#versionLbl'); if(vl) vl.textContent = meta.short;
+    var tag = $('#tagline'); if(tag) tag.innerHTML = '<span class="live"></span>' + esc(meta.tagline);
+    var wt = $('#welcomeTag'); if(wt) wt.innerHTML = '<span class="wdot"></span>' + esc(meta.tagline2);
+    var inp = $('#input'); if(inp) inp.placeholder = meta.placeholder;
+    var cards = $$('.vcard');
+    for(var i = 0; i < cards.length; i++) cards[i].classList.toggle('selected', cards[i].getAttribute('data-version') === key);
+    saveState();
+  }catch(e){}
+}
+function updateReasoningToggle(){
+  try{
+    var btn = $('#btnReasoningToggle'); var lbl = $('#reasoningLabel'); if(!btn || !lbl) return;
+    if(showReasoning){ btn.classList.add('on'); lbl.textContent = 'Скрыть рассуждение'; }
+    else{ btn.classList.remove('on'); lbl.textContent = 'Показать рассуждение'; }
+  }catch(e){}
+}
+function updateImageBtn(){ try{ var b = $('#btnImage'); if(!b) return; if(imageMode) b.classList.add('on'); else b.classList.remove('on'); }catch(e){} }
+function renderRange(name, value){
+  try{
+    var wrap = document.querySelector('.range[data-range="' + name + '"]'); if(!wrap) return;
+    var input = wrap.querySelector('input[type=range]'); if(!input) return;
+    var min = parseFloat(input.min); var max = parseFloat(input.max);
+    var pct = ((value - min) / (max - min)) * 100;
+    var fill = wrap.querySelector('.range-fill'); var thumb = wrap.querySelector('.range-thumb');
+    if(fill) fill.style.width = pct + '%';
+    if(thumb) thumb.style.left = pct + '%';
+    input.value = value;
+    var valEl = document.getElementById('val-' + name);
+    if(valEl){
+      var display = value;
+      if(name === 'max_tokens' || name === 'max_derived') display = Math.round(value);
+      else if(Number.isInteger(value)) display = value;
+      else display = value.toFixed(2).replace(/\.?0+$/, '');
+      valEl.textContent = display;
+    }
+  }catch(e){}
+}
+function initParamsUI(){
+  try{
+    var paramNames = ['temperature','top_p','top_k','max_tokens','repetition_penalty','reasoning_depth','activation_decay','confidence_threshold','max_derived'];
+    for(var i = 0; i < paramNames.length; i++){
+      var name = paramNames[i]; var val = Parameters.get(name);
+      var wrap = document.querySelector('.range[data-range="' + name + '"]'); if(!wrap) continue;
+      var input = wrap.querySelector('input[type=range]'); if(!input) continue;
+      input.value = val; renderRange(name, parseFloat(val));
+      var newInput = input.cloneNode(true);
+      input.parentNode.replaceChild(newInput, input);
+      newInput.addEventListener('input', function(e){
+        var range = e.target.closest('.range'); if(!range) return;
+        var pname = range.getAttribute('data-range'); var v = parseFloat(e.target.value);
+        renderRange(pname, v); Parameters.set(pname, v); Parameters.activePreset = 'custom'; updatePresetUI();
+      });
+    }
+    var switches = $$('.switch[data-switch]');
+    for(var j = 0; j < switches.length; j++){
+      (function(sw){
+        var key = sw.getAttribute('data-switch'); var val = Parameters.get(key);
+        if(val) sw.classList.add('on'); else sw.classList.remove('on');
+        var newSw = sw.cloneNode(true);
+        sw.parentNode.replaceChild(newSw, sw);
+        newSw.addEventListener('click', function(){
+          var isOn = newSw.classList.toggle('on');
+          Parameters.set(key, isOn);
+          if(key === 'show_reasoning'){ showReasoning = isOn; updateReasoningToggle(); saveState(); }
+          updatePresetUI();
+        });
+      })(switches[j]);
+    }
+    var sp = $('#systemPrompt'); if(sp) sp.value = Parameters.get('system_prompt') || '';
+    var presetBtns = $$('.preset');
+    for(var k = 0; k < presetBtns.length; k++){
+      (function(btn){
+        var newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        newBtn.addEventListener('click', function(){
+          var pname = newBtn.getAttribute('data-preset'); if(!pname || !PRESETS[pname]) return;
+          Parameters.apply(pname); initParamsUI(); updatePresetUI(); toast('Пресет «' + PRESETS[pname].name + '» применён');
+        });
+      })(presetBtns[k]);
+    }
+    updatePresetUI();
+  }catch(e){}
+}
+function updatePresetUI(){
+  try{
+    var btns = $$('.preset');
+    for(var i = 0; i < btns.length; i++) btns[i].classList.toggle('on', btns[i].getAttribute('data-preset') === Parameters.activePreset);
+    var activeEl = $('#activePreset');
+    if(activeEl){
+      if(Parameters.activePreset === 'custom') activeEl.textContent = 'Пользовательский';
+      else if(PRESETS[Parameters.activePreset]) activeEl.textContent = PRESETS[Parameters.activePreset].name;
+      else activeEl.textContent = '—';
+    }
+  }catch(e){}
+}
+
+var canvas = null, ctx = null, dots = [];
+var W = 0, H = 0, mx = .5, my = .5, rafStarted = false;
+function resizeCanvas(){
+  try{
+    if(!canvas || !ctx) return;
+    var mob = window.innerWidth <= 820;
+    var dpr = Math.min(mob ? 1.25 : 2, window.devicePixelRatio || 1);
+    W = window.innerWidth; H = window.innerHeight;
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    buildDots(mob);
+  }catch(e){}
+}
+function buildDots(mob){
+  try{
+    dots = [];
+    var count = mob ? 40 : Math.max(60, Math.min(130, Math.floor((W * H) / 18000)));
+    for(var i = 0; i < count; i++){
+      var depth = rnd(.25, 1);
+      dots.push({ x:rnd(0, W), y:rnd(0, H), r:rnd(.7, 2.4) * depth, depth:depth, baseA:rnd(.1, .45), amp:rnd(.08, .4), speed:rnd(.4, 1.5), phase:rnd(0, Math.PI * 2), drift:rnd(2, 9), driftPhase:rnd(0, Math.PI * 2), big:Math.random() < .08, red:Math.random() < (mob ? .12 : .15) });
+    }
+  }catch(e){ dots = []; }
+}
+function drawDots(t){
+  try{
+    requestAnimationFrame(drawDots);
+    if(!ctx || !canvas || document.hidden) return;
+    ctx.clearRect(0, 0, W, H);
+    ctx.globalCompositeOperation = 'lighter';
+    var time = t / 1000;
+    for(var i = 0; i < dots.length; i++){
+      var d = dots[i];
+      var tw = Math.sin(time * d.speed + d.phase);
+      var alpha = Math.max(.03, Math.min(1, d.baseA + tw * d.amp));
+      var px = d.x + Math.sin(time * .12 + d.driftPhase) * d.drift + (mx - .5) * 24 * d.depth;
+      var py = d.y + Math.cos(time * .1 + d.driftPhase) * d.drift + (my - .5) * 24 * d.depth;
+      var glow = d.big ? d.r * 9 : d.r * 5;
+      var col = d.red ? 'rgba(255,60,48,' : 'rgba(255,255,255,';
+      var g = ctx.createRadialGradient(px, py, 0, px, py, glow);
+      g.addColorStop(0, col + alpha.toFixed(3) + ')');
+      g.addColorStop(.25, col + (alpha * .35).toFixed(3) + ')');
+      g.addColorStop(1, col + '0)');
+      ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(px, py, glow, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = col + Math.min(1, alpha + .25).toFixed(3) + ')';
+      ctx.beginPath(); ctx.arc(px, py, d.r, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  }catch(e){}
+}
+function startDots(){
+  try{
+    canvas = $('#dotField'); if(!canvas) return;
+    ctx = canvas.getContext('2d'); if(!ctx) return;
+    resizeCanvas();
+    var rt = null;
+    window.addEventListener('resize', function(){ if(rt) clearTimeout(rt); rt = setTimeout(resizeCanvas, 150); }, {passive:true});
+    window.addEventListener('mousemove', function(e){ mx = e.clientX / Math.max(1, W); my = e.clientY / Math.max(1, H); }, {passive:true});
+    if(!rafStarted){ rafStarted = true; requestAnimationFrame(drawDots); }
+  }catch(e){}
+}
+
+function safeCall(name, fn){ try{ fn(); return true; }catch(e){ return false; } }
+
+function init(){
+  safeCall('Parameters.load', function(){ Parameters.load(); });
+  safeCall('loadState', function(){ loadState(); });
+  safeCall('loadChats', function(){ loadChats(); });
+  safeCall('loadSeedBrain', function(){ loadSeedBrain(); });
+  safeCall('startDots', function(){ startDots(); });
+  safeCall('applyVersion', function(){ applyVersion(currentVersion); });
+  safeCall('buildVersionCards', function(){ buildVersionCards(); });
+  safeCall('initParamsUI', function(){ initParamsUI(); });
+  safeCall('updateReasoningToggle', function(){ updateReasoningToggle(); });
+  safeCall('updateImageBtn', function(){ updateImageBtn(); });
+  safeCall('createOrOpenChat', function(){ if(!chats.length) createNewChat(true); else openChat(chats[0].id); });
+  safeCall('renderHistory', function(){ renderHistory(); });
+  safeCall('updateBrainStats', function(){ updateBrainStats(); });
+  safeCall('Activation.init', function(){ Activation.init(); });
+  safeCall('Account.init', function(){ Account.init(); });
+  safeCall('loadGoogleScript', function(){ loadGoogleScript(); });
+  safeCall('wireAccountUI', function(){ wireAccountUI(); });
+  safeCall('wireSettingsUI', function(){ wireSettingsUI(); });
+  safeCall('initDragDropCodes', function(){ initDragDropCodes(); });
+
+  var input = $('#input');
+  function submit(){
+    try{
+      if(!input) return;
+      var t = input.value; if(!t.trim()) return;
+      input.value = ''; autoGrow();
+      var finalText = t;
+      if(imageMode){ if(!/^(нарисуй|сгенерируй|создай|покажи|нарисовать|изобрази)/i.test(finalText)) finalText = 'Нарисуй ' + finalText; }
+      handleSend(finalText);
+    }catch(e){}
+  }
+  var sendBtn = $('#send'); if(sendBtn) sendBtn.addEventListener('click', submit);
+  if(input){
+    input.addEventListener('keydown', function(e){ if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); submit(); } });
+    input.addEventListener('input', autoGrow);
+  }
+  var imgBtn = $('#btnImage');
+  if(imgBtn) imgBtn.addEventListener('click', function(){ imageMode = !imageMode; updateImageBtn(); toast(imageMode ? 'Режим рисования включён' : 'Режим рисования выключен'); if(input) input.focus(); });
+  var chips = $$('.chip');
+  for(var i = 0; i < chips.length; i++){
+    (function(ch){ ch.addEventListener('click', function(){ try{ var q = ch.getAttribute('data-q'); if(q) handleSend(q); }catch(e){} }); })(chips[i]);
+  }
+  var btnNew = $('#btnNew'); if(btnNew) btnNew.addEventListener('click', function(){ createNewChat(false); });
+  var btnClear = $('#btnClear'); if(btnClear) btnClear.addEventListener('click', clearAllHistory);
+  var btnMenu = $('#btnMenu'); if(btnMenu) btnMenu.addEventListener('click', toggleSidebar);
+  var btnClose = $('#btnClose');
+  if(btnClose) btnClose.addEventListener('click', function(){ if(window.innerWidth <= 820) closeSidebar(); else toggleSidebar(); });
+  var bd = $('#sidebarBackdrop'); if(bd) bd.addEventListener('click', closeSidebar);
+  var btnVersion = $('#btnVersion');
+  if(btnVersion) btnVersion.addEventListener('click', function(){ var m = $('#versionModal'); if(m) m.classList.add('open'); });
+  var versionClose = $('#versionClose');
+  if(versionClose) versionClose.addEventListener('click', function(){ var m = $('#versionModal'); if(m) m.classList.remove('open'); });
+  var versionModal = $('#versionModal');
+  if(versionModal) versionModal.addEventListener('click', function(e){ if(e.target === versionModal) versionModal.classList.remove('open'); });
+  var btnParams = $('#btnParams');
+  if(btnParams) btnParams.addEventListener('click', function(){ initParamsUI(); var m = $('#paramsModal'); if(m) m.classList.add('open'); });
+  var paramsClose = $('#paramsClose');
+  if(paramsClose) paramsClose.addEventListener('click', function(){ var m = $('#paramsModal'); if(m) m.classList.remove('open'); });
+  var paramsModal = $('#paramsModal');
+  if(paramsModal) paramsModal.addEventListener('click', function(e){ if(e.target === paramsModal) paramsModal.classList.remove('open'); });
+  var paramsApply = $('#paramsApply');
+  if(paramsApply) paramsApply.addEventListener('click', function(){ var sp = $('#systemPrompt'); if(sp) Parameters.set('system_prompt', sp.value); Parameters.save(); var m = $('#paramsModal'); if(m) m.classList.remove('open'); toast('Параметры применены'); });
+  var paramsReset = $('#paramsReset');
+  if(paramsReset) paramsReset.addEventListener('click', function(){ Parameters.reset(); initParamsUI(); updatePresetUI(); toast('Параметры сброшены'); });
+  var paramsExport = $('#paramsExport');
+  if(paramsExport) paramsExport.addEventListener('click', function(){ try{ var json = JSON.stringify(Parameters.current, null, 2); if(navigator.clipboard) navigator.clipboard.writeText(json).then(function(){ toast('Скопировано'); }).catch(function(){ toast('Ошибка', true); }); else toast('Недоступно', true); }catch(e){ toast('Ошибка', true); } });
+  var paramsImport = $('#paramsImport');
+  if(paramsImport) paramsImport.addEventListener('click', function(){
+    var json = prompt('Вставь JSON параметров:'); if(!json) return;
+    try{ var p = JSON.parse(json); Parameters.current = Object.assign({}, DEFAULT_PARAMS, p); Parameters.activePreset = 'custom'; Parameters.save(); initParamsUI(); updatePresetUI(); toast('Параметры импортированы'); }catch(e){ toast('Ошибка импорта', true); }
+  });
+  var rBtn = $('#btnReasoningToggle');
+  if(rBtn) rBtn.addEventListener('click', function(){ showReasoning = !showReasoning; Parameters.set('show_reasoning', showReasoning); updateReasoningToggle(); saveState(); initParamsUI(); toast(showReasoning ? 'Рассуждение показано' : 'Рассуждение скрыто'); });
+  var lb = $('#lightbox');
+  if(lb) lb.addEventListener('click', function(e){ if(e.target === lb || e.target.id === 'lightboxClose') closeLightbox(); });
+  document.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){
+      var vm = $('#versionModal'); if(vm) vm.classList.remove('open');
+      var pm = $('#paramsModal'); if(pm) pm.classList.remove('open');
+      var am = $('#accountModal'); if(am) am.classList.remove('open');
+      var sm = $('#settingsModal'); if(sm) sm.classList.remove('open');
+      var abm = $('#aboutModal'); if(abm) abm.classList.remove('open');
+      closeSidebar(); closeLightbox();
+    }
+  });
+  window.addEventListener('resize', function(){ if(window.innerWidth > 820) closeSidebar(); }, {passive:true});
+}
+
+try{
+  if(document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+}catch(err){
+  try{
+    var fatal = document.createElement('div');
+    fatal.className = 'fatal';
+    fatal.innerHTML = '<div class="fatal-box"><b>OnyX · ошибка инициализации</b><br><br>' + esc(String(err && err.message ? err.message : err)) + '<br><br>F5 для перезагрузки.</div>';
+    document.body.appendChild(fatal);
+  }catch(e){ alert('Критическая ошибка: ' + err.message); }
+}
+</script>
+</body>
+</html>
