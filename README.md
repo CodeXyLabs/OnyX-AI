@@ -1,4 +1,4 @@
-# OnyX Ai · by CodeXy™ Labs
+# OnyX Ai
 
 <div align="center">
 
