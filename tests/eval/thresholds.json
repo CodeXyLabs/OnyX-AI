@@ -1,0 +1,26 @@
+{
+  "version": "v1",
+  "pre_registered": "2026-10-22",
+  "note": "Пороги зафиксированы ДО измерения baseline. Менять после начала замеров нельзя.",
+  "primary_metric": "correctness",
+  "acceptance": {
+    "main_abs_gain_min": 0.05,
+    "heldout_abs_gain_min": 0.03,
+    "guard_tolerance": 0.02,
+    "latency_p95_max_ms": 500,
+    "latency_p95_growth_max": 1.5,
+    "cpu_ms_growth_max": 1.5,
+    "stability_min": 0.98
+  },
+  "guards": ["completeness", "usefulness", "safety", "stability"],
+  "sla": {
+    "latency_p95_ms": 500,
+    "cpu_ms_per_request": 50
+  },
+  "stop_rules": [
+    "прирост первичной метрики < 0.5% при затратах выше нормы две итерации подряд",
+    "достигнут лимит бюджета или SLA",
+    "растёт только переобучение под eval",
+    "остаточный дефект требует новых данных или решения человека"
+  ]
+}

@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>OnyX Studio</title>
+<style>
+:root{--a:#FF2A1F;--c:#141416;--b:#2a2a2e;--g:#8e8e93}
+*{box-sizing:border-box}
+body{margin:0;background:#000;color:#f5f5f7;font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",Roboto,sans-serif;padding:14px;max-width:760px;margin:auto}
+header{display:flex;align-items:baseline;gap:8px;margin:6px 0 12px}header b{font-size:26px}header span{color:var(--g);font-size:13px}
+.card{background:var(--c);border:1px solid var(--b);border-radius:20px;padding:14px;margin-bottom:12px}
+canvas,video{width:100%;border-radius:14px;background:#000;display:block}
+label{display:block;font-size:12px;color:var(--g);margin:10px 0 4px;font-weight:600;text-transform:uppercase;letter-spacing:.5px}
+textarea,select,input[type=number],input[type=text]{width:100%;background:#0b0b0d;color:#fff;border:1px solid var(--b);border-radius:12px;padding:11px;font-size:16px;font-family:inherit}
+textarea{min-height:76px;resize:vertical}
+input[type=range]{width:100%;accent-color:var(--a)}
+.row{display:flex;gap:10px}.row>div{flex:1;min-width:0}
+.tabs{display:flex;background:var(--c);border-radius:14px;padding:4px;margin-bottom:12px;border:1px solid var(--b)}
+.tabs button{flex:1;background:none;border:0;color:var(--g);padding:11px;border-radius:10px;font-size:16px;font-weight:600}
+.tabs .on{background:var(--a);color:#fff}
+.btn{background:var(--a);color:#fff;border:0;border-radius:14px;padding:14px;font-size:17px;font-weight:700;width:100%;margin-top:12px}
+.btn.s{background:#2a2a2e}.btn:disabled{opacity:.5}
+.dls{display:flex;gap:10px}.dls .btn{margin-top:10px}
+#bar{height:6px;background:#222;border-radius:3px;margin-top:10px;overflow:hidden;display:none}#bar i{display:block;height:100%;width:0;background:var(--a)}
+#msg{font-size:13px;color:var(--g);margin-top:8px;min-height:16px}
+details{margin-top:10px}summary{cursor:pointer;color:#fff;font-weight:600;padding:6px 0}
+.th{display:inline-block;position:relative;margin:6px 6px 0 0}.th img{width:64px;height:64px;object-fit:cover;border-radius:10px;border:2px solid transparent}.th.on img{border-color:var(--a)}
+.th b{position:absolute;top:-6px;right:-6px;background:#000;border:1px solid var(--b);border-radius:50%;width:20px;height:20px;text-align:center;font-size:13px;line-height:18px}
+.chk{display:flex;align-items:center;gap:8px;margin-top:10px;font-size:15px}.chk input{width:20px;height:20px;accent-color:var(--a)}
+.hid{display:none}
+</style></head><body>
+<header><b>OnyX Studio</b><span>image &amp; video generator</span></header>
+<div class="tabs"><button id="tI" class="on">Image</button><button id="tV">Video</button></div>
+<div class="card"><canvas id="cv"></canvas><div id="bar"><i></i></div><div id="msg"></div><div id="vw"></div></div>
+<div class="card">
+<label>Prompt</label><textarea id="pr" placeholder="Describe what you want to create…">a cat in the forest at night</textarea>
+<div class="row"><div><label>Engine</label><select id="en"><option value="ai">AI (online)</option><option value="pr">Procedural (offline)</option></select></div>
+<div><label>Style</label><select id="sty"><option value="cinematic">Cinematic</option><option value="anime">Anime</option><option value="photo">Photo</option><option value="neon">Neon</option><option value="minimal">Minimal</option></select></div></div>
+<div class="row"><div><label>Aspect</label><select id="as"><option>16:9</option><option>9:16</option><option>1:1</option><option>4:3</option></select></div>
+<div><label>Quality</label><select id="q"><option value="1280">HD</option><option value="1920">Full HD</option><option value="720">Fast (720)</option></select></div>
+<div><label>Seed</label><div class="row"><input id="seed" type="number" value="7" style="min-width:0"><button class="btn s" style="margin:0;width:52px;padding:0" id="dice">🎲</button></div></div></div>
+<label>My images</label><input id="up" type="file" accept="image/*" multiple style="color:#8e8e93"><div id="ths"></div>
+<div id="own" class="hid"><label>My image strength: <span id="bv">100</span>%</label><input id="bl" type="range" min="0" max="100" value="100"></div>
+<details><summary>Effects &amp; caption</summary>
+<div class="row"><div><label>Brightness</label><input class="fx" id="f1" type="range" min="50" max="150" value="100"></div><div><label>Contrast</label><input class="fx" id="f2" type="range" min="50" max="150" value="100"></div></div>
+<div class="row"><div><label>Saturation</label><input class="fx" id="f3" type="range" min="0" max="200" value="100"></div><div><label>Blur</label><input class="fx" id="f4" type="range" min="0" max="10" value="0"></div></div>
+<div class="row"><div><label>Vignette</label><input class="fx" id="f5" type="range" min="0" max="100" value="40"></div><div><label>Grain</label><input class="fx" id="f6" type="range" min="0" max="100" value="15"></div></div>
+<label>Caption</label><input class="fx" id="cap" type="text" placeholder="Optional text on top"><label>Caption position</label><select class="fx" id="cp"><option value="b">Bottom</option><option value="c">Center</option><option value="t">Top</option></select></details>
+<div id="iO"><details open><summary>Image export</summary><div class="row"><div><label>Format</label><select id="fmt"><option value="png">PNG</option><option value="jpeg">JPEG</option></select></div><div><label>JPEG quality</label><input id="jq" type="range" min="50" max="100" value="92"></div></div></details></div>
+<div id="vO" class="hid"><details open><summary>Video settings</summary>
+<div class="row"><div><label>Duration: <span id="dv">10</span>s</label><input id="du" type="range" min="4" max="40" value="10"></div><div><label>FPS</label><select id="fps"><option>30</option><option>60</option><option>24</option></select></div></div>
+<div class="row"><div><label>Generated scenes: <span id="nv">3</span></label><input id="ns" type="range" min="0" max="8" value="3"></div><div><label>Motion</label><select id="mo"><option value="mx">Mixed</option><option value="zi">Zoom in</option><option value="zo">Zoom out</option><option value="pl">Pan left</option><option value="pr">Pan right</option></select></div></div>
+<div class="row"><div><label>Transition</label><select id="tr"><option value="fade">Crossfade</option><option value="slide">Slide</option><option value="zoom">Zoom</option></select></div></div>
+<label class="chk"><input id="ow" type="checkbox" checked> Use my images as scenes</label><label class="chk"><input id="mu" type="checkbox" checked> Add music</label></details></div>
+<button class="btn" id="go">Generate image</button>
+<div class="dls" id="dI"><button class="btn s" id="dp">⬇ PNG / JPEG</button></div>
+<div class="dls hid" id="dV"><a id="dl" class="btn s hid" style="text-align:center;text-decoration:none">⬇ Download video</a></div>
+</div>
+<p style="color:#8e8e93;font-size:12px;text-align:center">AI mode uses the free pollinations.ai service (internet required). Procedural mode works offline and builds a scene from keywords in your prompt.</p>
+<script src="/web/python_bridge.js"></script>
+<script>
+const $=i=>document.getElementById(i),cv=$('cv'),cx=cv.getContext('2d'),tmp=document.createElement('canvas'),tx=tmp.getContext('2d');
+const cl=(v,a=0,b=1)=>Math.min(b,Math.max(a,v)),sm=v=>{v=cl(v);return v*v*(3-2*v)};
+let wmImg=null;function loadWM(){if(wmImg)return Promise.resolve(wmImg);return new Promise(r=>{const im=new Image();im.onload=()=>{wmImg=im;r(im)};im.onerror=()=>{wmImg=null;r(null)};im.src=(window.ONYX_WATERMARK_DATA_URI||'assets/watermark/onyx_logo.png')})}
+function stampWM(c,img){if(!img||!img.width)return;const w=c.canvas.width,h=c.canvas.height,tw=Math.max(60,Math.round(w*.16)),sc=tw/img.width,th=Math.max(1,Math.round(img.height*sc)),m=Math.max(8,Math.round(w*.02)),x=w-tw-m,y=h-th-m;c.save();c.globalAlpha=.92;c.shadowColor='rgba(0,0,0,.6)';c.shadowBlur=Math.round(th*.14);c.drawImage(img,x,y,tw,th);c.restore()}
+function rng(s){let a=s>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const STY={cinematic:{f:'contrast(1.1) saturate(1.1)',bars:1,tint:['rgba(0,90,110,.2)','rgba(255,140,60,.14)'],suf:'cinematic lighting, film still, 35mm, highly detailed'},anime:{f:'saturate(1.35) contrast(1.05)',suf:'anime style, studio ghibli, vibrant colors, detailed background'},photo:{f:'',suf:'photorealistic, 8k, sharp focus, natural light'},neon:{f:'saturate(1.5) contrast(1.15)',tint:['rgba(255,0,120,.15)','rgba(0,200,255,.15)'],suf:'neon lights, cyberpunk, glowing, dark background'},minimal:{f:'saturate(.7)',suf:'minimal, flat design, clean composition, soft colors'}};
+const VAR=['wide establishing shot','close-up detail','aerial view','golden hour lighting','dramatic atmosphere','from a low angle','misty atmosphere','epic composition'];
+const MO={zi:{z0:1.02,z1:1.16,px:0},zo:{z0:1.16,z1:1.02,px:0},pl:{z0:1.12,z1:1.12,px:-6},pr:{z0:1.12,z1:1.12,px:6}};
+let mode='I',own=[],sel=0,cur=null,sc=[],W=1280,H=720,D=10,busy=false,noise;
+(()=>{const n=document.createElement('canvas');n.width=n.height=256;const c=n.getContext('2d'),d=c.createImageData(256,256);for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=255}c.putImageData(d,0,0);noise=cx.createPattern(n,'repeat')})();
+function dims(){const [a,b]=$('as').value.split(':').map(Number),L=+$('q').value;let w,h;if(a>=b){w=L;h=Math.round(L*b/a)}else{h=L;w=Math.round(L*a/b)}return[w&~1,h&~1]}
+function setSize(){[W,H]=dims();cv.width=tmp.width=W;cv.height=tmp.height=H}
+function analyze(p,seed){p=p.toLowerCase();const T=['space|galax|planet|cosmos|nebula|космос|галакт|планет','sea|ocean|beach|wave|ship|море|океан|пляж|волн','forest|tree|wood|jungle|лес|дерев|ёлк','city|town|street|urban|cyber|skyscraper|город|улиц|кибер','mountain|alps|peak|hill|горы|гора|горн','desert|dune|sahara|пустын|дюн','snow|winter|arctic|снег|зим|лёд'].findIndex(r=>new RegExp(r).test(p));
+ let tm=/night|dark|moon|ноч|луна|тёмн/.test(p)?'night':/sunset|dusk|evening|закат|вечер/.test(p)?'sunset':/sunrise|dawn|morning|рассвет|утр/.test(p)?'dawn':'day';if(T==0&&tm=='day')tm='night';
+ return{ty:['space','sea','forest','city','mountain','desert','snow'][T]||'abs',tm,cat:/\bcat|kitten|кот|кош/.test(p),rain:/rain|storm|дожд|ливен/.test(p),fog:/fog|mist|туман/.test(p),seed}}
+function ridge(c,w,h,base,amp,R,col,off){const p=[R()*9,R()*9,R()*9];c.fillStyle=col;c.beginPath();c.moveTo(0,h);for(let x=0;x<=w+8;x+=8){const u=(x+off)/w;c.lineTo(x,base-amp*(Math.sin(u*5+p[0])*.5+Math.sin(u*11+p[1])*.3+Math.sin(u*23+p[2])*.2+.5))}c.lineTo(w,h);c.fill()}
+function pines(c,w,h,base,sz,R,col,off,n){c.fillStyle=col;for(let i=0;i<n;i++){const x=((R()*1.3-.15)*w+off),s=sz*(.6+R()*.8),y=base+R()*h*.06;c.beginPath();c.moveTo(x,y-s*2.4);c.lineTo(x+s*.7,y);c.lineTo(x-s*.7,y);c.fill();c.beginPath();c.moveTo(x,y-s*1.6);c.lineTo(x+s*.9,y-s*.2);c.lineTo(x-s*.9,y-s*.2);c.fill()}}
+function blds(c,w,h,base,R,col,off,lit,hh){c.fillStyle=col;let x=-w*.1;while(x<w*1.1){const bw=w*(.03+R()*.05),bh=h*hh*(.4+R()*.9);c.fillStyle=col;c.fillRect(x+off,base-bh,bw,bh+h);if(lit)for(let yy=base-bh+10;yy<base-8;yy+=16)for(let xx=x+6;xx<x+bw-8;xx+=14)if(R()>.55){c.fillStyle=R()>.5?'#ffd98a':'#9fd8ff';c.globalAlpha=.8;c.fillRect(xx+off,yy,6,8);c.globalAlpha=1}else R();x+=bw+w*.004}}
+function catS(c,x,y,s,eyes){c.fillStyle='#050505';c.beginPath();c.ellipse(x,y-s*.5,s*.42,s*.55,0,0,7);c.fill();c.beginPath();c.arc(x,y-s*1.2,s*.34,0,7);c.fill();c.beginPath();c.moveTo(x-s*.32,y-s*1.35);c.lineTo(x-s*.28,y-s*1.78);c.lineTo(x-s*.06,y-s*1.5);c.moveTo(x+s*.32,y-s*1.35);c.lineTo(x+s*.28,y-s*1.78);c.lineTo(x+s*.06,y-s*1.5);c.fill();c.strokeStyle='#050505';c.lineWidth=s*.12;c.beginPath();c.moveTo(x+s*.38,y-s*.2);c.quadraticCurveTo(x+s*1,y-s*.1,x+s*.8,y-s*.9);c.stroke();c.fillStyle=eyes?'#ffd24a':'#d9c26a';c.shadowColor='#ffd24a';c.shadowBlur=eyes?18:0;c.fillRect(x-s*.17,y-s*1.25,s*.1,s*.07);c.fillRect(x+s*.07,y-s*1.25,s*.1,s*.07);c.shadowBlur=0}
+function space(c,w,h,R,t,tm){const g=c.createRadialGradient(w/2,h/2,0,w/2,h/2,w*.7);g.addColorStop(0,'#14143a');g.addColorStop(1,'#020206');c.fillStyle=g;c.fillRect(0,0,w,h);const off=(t-.5)*w*.06;
+ for(let i=0;i<5;i++){const x=R()*w+off*.3,y=R()*h,r=w*(.15+R()*.2),hu=R()*360,gg=c.createRadialGradient(x,y,0,x,y,r);gg.addColorStop(0,`hsla(${hu},80%,55%,.35)`);gg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=gg;c.fillRect(0,0,w,h)}
+ for(let i=0;i<420;i++){const d=.3+R()*.9,x=((R()*w+off*d*3)%w+w)%w,y=R()*h;c.globalAlpha=.4+.6*Math.abs(Math.sin(tm*1.5+i));c.fillStyle='#fff';c.fillRect(x,y,d*2,d*2)}c.globalAlpha=1;
+ const px=w*(.55+.2*R())+off,py=h*(.4+.2*R()),pr=h*.18;const pg=c.createRadialGradient(px-pr*.4,py-pr*.4,pr*.1,px,py,pr);pg.addColorStop(0,'#ffb27a');pg.addColorStop(1,'#3a1030');c.fillStyle=pg;c.beginPath();c.arc(px,py,pr,0,7);c.fill();c.strokeStyle='rgba(255,220,180,.5)';c.lineWidth=6;c.beginPath();c.ellipse(px,py,pr*1.7,pr*.4,-.4,Math.PI,7.4);c.stroke()}
+function scene(c,w,h,a,t,tm){const R=rng(a.seed+7),off=(t-.5)*w*.1,n=a.tm=='night',hz=h*(a.ty=='sea'?.58:.64);
+ if(a.ty=='space')return space(c,w,h,R,t,tm);
+ const S={day:['#3b82d6','#bfe3ff'],sunset:['#2b1055','#ff6a3d','#ffd28a'],dawn:['#3a2a6b','#ff8fa3','#ffe1a8'],night:['#03040f','#0f1a45']}[a.tm],g=c.createLinearGradient(0,0,0,hz);S.forEach((k,i)=>g.addColorStop(i/(S.length-1),k));c.fillStyle=g;c.fillRect(0,0,w,h);
+ if(n)for(let i=0;i<200;i++){const x=R()*w,y=R()*hz*.9;c.globalAlpha=.3+.7*Math.abs(Math.sin(tm*1.6+i));c.fillStyle='#fff';c.fillRect(x+off*.2,y,1.6,1.6)}c.globalAlpha=1;
+ const sx=w*(.2+.6*R())+off*.5,sy=n||a.tm=='day'?h*.2:hz-h*.08,sr=h*.06,sg=c.createRadialGradient(sx,sy,0,sx,sy,sr*6);sg.addColorStop(0,n?'rgba(200,215,255,.5)':'rgba(255,220,150,.7)');sg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=sg;c.fillRect(0,0,w,h);c.fillStyle=n?'#eef1ff':'#fff6cf';c.beginPath();c.arc(sx,sy,sr,0,7);c.fill();
+ const LC={day:['#7aa6d4','#4f7fa8','#2f5d4a','#1d4a2c'],sunset:['#8a4f7a','#5a2d5e','#3a1a42','#1e0f26'],dawn:['#9a6a8a','#6a4a7e','#4a3260','#2a1c3a'],night:['#101a3a','#0b1230','#070c20','#04060f']}[a.tm];
+ const ty=a.ty;
+ if(ty=='mountain'||ty=='snow'){const C=ty=='snow'?(n?['#2a3a66','#1d2a50','#3a4a7a']:['#dfe9f5','#c5d5ea','#f4f8ff']):LC;ridge(c,w,h,hz-h*.05,h*.32,R,C[0],off*.2);ridge(c,w,h,hz+h*.03,h*.26,R,C[1],off*.5);ridge(c,w,h,hz+h*.14,h*.18,R,C[2],off*.9);if(ty=='mountain')pines(c,w,h,hz+h*.3,h*.05,R,LC[3],off*1.2,26)}
+ else if(ty=='forest'){ridge(c,w,h,hz-h*.04,h*.2,R,LC[0],off*.2);ridge(c,w,h,hz+h*.02,h*.14,R,LC[1],off*.4);c.fillStyle=LC[3];c.fillRect(0,hz+h*.1,w,h);pines(c,w,h,hz+h*.1,h*.05,R,LC[1],off*.5,40);pines(c,w,h,hz+h*.2,h*.08,R,LC[2],off*.8,26);pines(c,w,h,hz+h*.36,h*.13,R,LC[3],off*1.3,14)}
+ else if(ty=='city'){blds(c,w,h,hz+h*.05,R,LC[0],off*.3,n||a.tm=='sunset',.4);blds(c,w,h,hz+h*.12,R,LC[1],off*.6,n||a.tm=='sunset',.5);blds(c,w,h,hz+h*.22,R,LC[2],off,true,.62);c.fillStyle=LC[3];c.fillRect(0,hz+h*.22,w,h)}
+ else if(ty=='desert'){const D=a.tm=='day'?['#e0b070','#c98f4e','#a8683a']:n?['#2a2a3a','#1a1a2a','#0e0e18']:['#b5503a','#8a3a3a','#5a2a3a'];ridge(c,w,h,hz,h*.12,R,D[0],off*.3);ridge(c,w,h,hz+h*.1,h*.16,R,D[1],off*.6);ridge(c,w,h,hz+h*.22,h*.18,R,D[2],off)}
+ else if(ty=='sea'){const wg=c.createLinearGradient(0,hz,0,h);wg.addColorStop(0,S[S.length-1]);wg.addColorStop(1,n?'#02050f':a.tm=='day'?'#0b3a66':'#2a1040');c.fillStyle=wg;c.fillRect(0,hz,w,h);ridge(c,w,h,hz+2,h*.06,R,LC[1],off*.3);c.fillStyle=wg;c.fillRect(0,hz+2,w,h);
+  for(let i=0;i<60;i++){const y=hz+8+Math.pow(i/60,1.8)*(h-hz),ww=w*(.04+i/60*.25)*(.5+.5*Math.sin(tm+i)),x=sx+Math.sin(tm*.8+i*1.3)*w*.04*(i/60+.2);c.fillStyle=n?'rgba(200,215,255,.5)':'rgba(255,230,170,.55)';c.fillRect(x-ww/2,y,ww,2+i/20)}}
+ else{for(let i=0;i<7;i++){const x=R()*w+Math.sin(tm*.4+i)*w*.05+off*(.3+R()),y=R()*h,r=w*(.12+R()*.2),hu=R()*360,gg=c.createRadialGradient(x,y,0,x,y,r);gg.addColorStop(0,`hsla(${hu},85%,60%,.6)`);gg.addColorStop(1,'rgba(0,0,0,0)');c.fillStyle=gg;c.fillRect(0,0,w,h)}}
+ if(a.fog||ty=='forest'||ty=='mountain'){const fg=c.createLinearGradient(0,hz-h*.1,0,hz+h*.15);fg.addColorStop(0,'rgba(255,255,255,0)');fg.addColorStop(.5,n?'rgba(120,140,200,.25)':'rgba(255,255,255,.28)');fg.addColorStop(1,'rgba(255,255,255,0)');c.fillStyle=fg;c.fillRect(0,hz-h*.1,w,h*.3)}
+ if(a.cat)catS(c,w*(.7+.1*R())+off*1.4,h*.97,h*.22,n);
+ if(a.rain||ty=='snow'){c.strokeStyle='rgba(200,215,255,.5)';c.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<220;i++){const x=R()*w,y=((R()*h+tm*(a.rain?900:120)*(.5+R()))%h);if(a.rain){c.beginPath();c.moveTo(x,y);c.lineTo(x-6,y+22);c.stroke()}else{c.beginPath();c.arc(x+Math.sin(tm+i)*12,y,1.5+R()*2.5,0,7);c.fill()}}}}
+function cover(c,w,h,im){const iw=im.width||im.naturalWidth,ih=im.height||im.naturalHeight,s=Math.max(w/iw,h/ih);c.drawImage(im,(w-iw*s)/2,(h-ih*s)/2,iw*s,ih*s)}
+function paintSrc(s,t,tm,mo){cx.save();cx.translate(W/2+mo.px*(t-.5)*W*.02,H/2);const z=mo.z0+(mo.z1-mo.z0)*t;cx.scale(z,z);cx.translate(-W/2,-H/2);if(s.k=='proc')scene(cx,W,H,s.sp,t,tm);else cover(cx,W,H,s.im);cx.restore()}
+function post(){const st=STY[$('sty').value],v=i=>+$('f'+i).value,f=`brightness(${v(1)}%) contrast(${v(2)}%) saturate(${v(3)}%) blur(${v(4)}px) ${st.f}`;
+ if(cx.filter!==undefined&&f.trim()!='brightness(100%) contrast(100%) saturate(100%) blur(0px)'){tx.filter=f;tx.drawImage(cv,0,0);tx.filter='none';cx.drawImage(tmp,0,0)}
+ if(st.tint){const g=cx.createLinearGradient(0,0,0,H);g.addColorStop(0,st.tint[0]);g.addColorStop(1,st.tint[1]);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
+ if(v(5)){const g=cx.createRadialGradient(W/2,H/2,H*.35,W/2,H/2,Math.max(W,H)*.75);g.addColorStop(0,'rgba(0,0,0,0)');g.addColorStop(1,`rgba(0,0,0,${v(5)/100*.85})`);cx.fillStyle=g;cx.fillRect(0,0,W,H)}
+ if(v(6)){cx.save();cx.globalAlpha=v(6)/100*.25;cx.translate(Math.random()*256,Math.random()*256);cx.fillStyle=noise;cx.fillRect(-256,-256,W+512,H+512);cx.restore()}
+ if(st.bars){cx.fillStyle='#000';cx.fillRect(0,0,W,H*.08);cx.fillRect(0,H*.92,W,H*.08)}
+ loadWM().then(wm=>{if(wm)stampWM(cx,wm)});
+ const cap=$('cap').value.trim();if(cap){let sz=H*.06;cx.font='700 '+sz+'px -apple-system,Segoe UI,sans-serif';while(cx.measureText(cap).width>W*.88&&sz>10){sz-=2;cx.font='700 '+sz+'px -apple-system,Segoe UI,sans-serif'}cx.textAlign='center';cx.textBaseline='middle';cx.shadowColor='rgba(0,0,0,.7)';cx.shadowBlur=sz*.4;cx.fillStyle='#fff';cx.fillText(cap,W/2,{b:H*.86,c:H/2,t:H*.14}[$('cp').value]);cx.shadowBlur=0}}
+async function getSrc(i,vary){const p=$('pr').value.trim()||'beautiful landscape',seed=+$('seed').value+i*97,st=STY[$('sty').value];
+ if($('en').value=='ai'){try{const k=Math.min(1,1280/Math.max(W,H)),aw=Math.round(W*k/16)*16,ah=Math.round(H*k/16)*16,u=`https://image.pollinations.ai/prompt/${encodeURIComponent(p+(vary?', '+VAR[i%VAR.length]:'')+', '+st.suf)}?width=${aw}&height=${ah}&seed=${seed}&nologo=true`,r=await fetch(u);if(!r.ok)throw 0;return{k:'img',im:await createImageBitmap(await r.blob())}}catch(e){
+   // если онлайн недоступен — пробуем локальный Python-движок OnyX (Openverse/объекты)
+   try{if(window.OnyXPython&&OnyXPython.image){const rr=await OnyXPython.image(p,{size:Math.max(W,H),online:true});if(rr&&rr.url){const im=new Image();im.src=rr.url;try{await im.decode();return{k:'img',im}}catch(_){}}}}
+   catch(_){}
+   M('AI service unavailable — used the procedural engine instead.')
+ }}
+ return{k:'proc',sp:analyze(p,seed)}}
+function M(m){$('msg').textContent=m}
+function bar(p){$('bar').style.display=p<0?'none':'block';$('bar').firstChild.style.width=(p*100)+'%'}
+function renderImg(){if(!cur)return;cx.fillStyle='#000';cx.fillRect(0,0,W,H);if(cur.base)paintSrc(cur.base,.5,0,{z0:1,z1:1,px:0});const b=+$('bl').value/100;if(cur.own&&b>0){cx.save();cx.globalAlpha=b;cover(cx,W,H,cur.own);cx.restore()}post()}
+async function genImg(){const hasOwn=own.length>0,b=+$('bl').value;setSize();M('Generating…');bar(.3);const base=(hasOwn&&b>=100)?null:await getSrc(0,0);cur={base,own:hasOwn?own[sel].im:null};renderImg();bar(-1);if(!$('msg').textContent.startsWith('AI service'))M('Done. Adjust effects live, then download.')}
+function motion(i){const m=$('mo').value;return MO[m=='mx'?['zi','pl','zo','pr'][i%4]:m]}
+function paintScene(i,t,tm){paintSrc(sc[i],t,tm,motion(i))}
+function frame(t){const N=sc.length,d=D/N,i=Math.min(N-1,Math.floor(t/d)),loc=t-i*d,tr=Math.min(.9,d*.4);cx.fillStyle='#000';cx.fillRect(0,0,W,H);paintScene(i,loc/d,t);
+ if(i<N-1&&loc>d-tr){const p=sm((loc-(d-tr))/tr),m=$('tr').value;cx.save();if(m=='slide')cx.translate((1-p)*W,0);else{cx.globalAlpha=p;if(m=='zoom'){const s=1.3-.3*p;cx.translate(W/2,H/2);cx.scale(s,s);cx.translate(-W/2,-H/2)}}paintScene(i+1,0,t);cx.restore()}
+ post();const f=Math.max(1-t/.8,1-(D-t)/.8);if(f>0){cx.fillStyle='rgba(0,0,0,'+cl(f)+')';cx.fillRect(0,0,W,H)}}
+function music(ac,out,t0,Dd,sd){const g=ac.createGain();g.gain.setValueAtTime(.5,t0);g.gain.setValueAtTime(.5,t0+Dd-2);g.gain.linearRampToValueAtTime(0,t0+Dd);g.connect(out);
+ const o=(f,s,d,v,at)=>{const q=ac.createOscillator(),a=ac.createGain();q.frequency.value=f;a.gain.setValueAtTime(.0001,t0+s);a.gain.linearRampToValueAtTime(v,t0+s+at);a.gain.exponentialRampToValueAtTime(.001,t0+s+d);q.connect(a);a.connect(g);q.start(t0+s);q.stop(t0+s+d+.05)};
+ const CH=[[130.8,164.8,196,246.9],[110,130.8,164.8,196],[87.3,130.8,174.6,220],[98,123.5,146.8,196]],P=[523.3,587.3,659.3,784,880,1046.5];for(let s=0;s<Dd;s+=5)CH[(s/5)%4].forEach(f=>o(f,s,6,.1,1.5));for(let s=1,i=0;s<Dd-1;s+=.4,i++)o(P[(i*5+sd)%6],s,1.2,.05,.005)}
+const MT=['video/mp4;codecs=avc1.640028,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2','video/mp4','video/webm;codecs=vp9,opus','video/webm'],mt=window.MediaRecorder?MT.find(q=>MediaRecorder.isTypeSupported(q)):null;
+async function genVid(){setSize();D=+$('du').value;sc=[];const n=+$('ns').value;if($('ow').checked)own.forEach(o=>sc.push({k:'img',im:o.im}));const total=n+sc.length||1,gen=total-sc.length;
+ for(let i=0;i<gen;i++){M('Generating scene '+(i+1)+' of '+gen+'…');bar((i+.5)/gen*.5);sc.push(await getSrc(i,1))}
+ M('Recording '+D+' s in real time — keep this tab open…');
+ if(!mt){M('Recording is not supported in this browser.');return}
+ const fps=+$('fps').value,ext=mt.includes('mp4')?'mp4':'webm',vt=cv.captureStream(fps).getVideoTracks();let ac,tracks=[...vt];const m=$('mu').checked;
+ if(m){ac=new(window.AudioContext||window.webkitAudioContext)();const gm=ac.createGain(),ds=ac.createMediaStreamDestination();gm.connect(ac.destination);gm.connect(ds);music(ac,gm,ac.currentTime+.3,D,+$('seed').value%6);tracks=[...vt,...ds.stream.getAudioTracks()]}
+ const rec=new MediaRecorder(new MediaStream(tracks),{mimeType:mt,videoBitsPerSecond:12e6}),ch=[];rec.ondataavailable=e=>e.data.size&&ch.push(e.data);
+ const done=new Promise(r=>rec.onstop=r);rec.start(1000);const st=performance.now()+300;
+ await new Promise(r=>{const lp=n=>{const t=Math.max(0,(n-st)/1000);frame(Math.min(t,D-.01));bar(.5+.5*Math.min(1,t/D));if(t<D)requestAnimationFrame(lp);else r()};requestAnimationFrame(lp)});
+ await new Promise(r=>setTimeout(r,400));rec.stop();await done;if(ac)ac.close();
+ const url=URL.createObjectURL(new Blob(ch,{type:mt.split(';')[0]}));$('vw').innerHTML='<video controls playsinline style="margin-top:10px" src="'+url+'"></video>';const a=$('dl');a.href=url;a.download='onyx_video.'+ext;a.classList.remove('hid');$('dV').classList.remove('hid');bar(-1);M('Done! Your video is ready ('+ext.toUpperCase()+').')}
+async function run(){if(busy)return;busy=true;$('go').disabled=true;$('vw').innerHTML='';try{if(mode=='I')await genImg();else await genVid()}catch(e){M('Error: '+e)}busy=false;$('go').disabled=false}
+function tab(m){mode=m;$('tI').classList.toggle('on',m=='I');$('tV').classList.toggle('on',m=='V');$('iO').classList.toggle('hid',m!='I');$('vO').classList.toggle('hid',m!='V');$('dI').classList.toggle('hid',m!='I');$('dV').classList.toggle('hid',m!='V'||$('dl').classList.contains('hid'));$('go').textContent=m=='I'?'Generate image':'Generate video (MP4)';$('vw').innerHTML=m=='V'?$('vw').innerHTML:''}
+$('tI').onclick=()=>tab('I');$('tV').onclick=()=>tab('V');$('go').onclick=run;$('dice').onclick=()=>{$('seed').value=Math.floor(Math.random()*99999)};
+$('du').oninput=e=>$('dv').textContent=e.target.value;$('ns').oninput=e=>$('nv').textContent=e.target.value;$('bl').oninput=e=>{$('bv').textContent=e.target.value;renderImg()};
+document.querySelectorAll('.fx').forEach(e=>e.oninput=()=>{if(mode=='I')renderImg()});$('as').onchange=$('q').onchange=()=>{if(mode=='I'&&cur){setSize();renderImg()}};
+$('dp').onclick=()=>{if(!cur){M('Generate an image first.');return}const f=$('fmt').value;cv.toBlob(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='onyx_image.'+(f=='png'?'png':'jpg');a.click()},'image/'+f,+$('jq').value/100)};
+function ths(){$('ths').innerHTML=own.map((o,i)=>`<span class="th ${i==sel?'on':''}"><img src="${o.url}" onclick="sel=${i};ths();renderImg()"><b onclick="own.splice(${i},1);sel=0;ths();renderImg()">×</b></span>`).join('');$('own').classList.toggle('hid',!own.length)}
+$('up').onchange=async e=>{for(const f of e.target.files){const im=new Image();im.src=URL.createObjectURL(f);try{await im.decode();own.push({im,url:im.src})}catch(_){}}e.target.value='';ths();if(mode=='I'&&cur){cur.own=own[sel]?own[sel].im:null;renderImg()}};
+setSize();cur={base:{k:'proc',sp:analyze($('pr').value,7)},own:null};renderImg();M(mt?(mt.includes('mp4')?'Ready. Your browser will save real MP4 video.':'Ready. This browser records WebM (use Chrome 126+ or Edge for MP4).'):'Ready. Video recording is not supported in this browser.');
+</script></body></html>

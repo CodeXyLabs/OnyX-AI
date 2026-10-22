@@ -1,1 +1,45 @@
-Nothing should be ignored based on the provided file changes. The only modified file is `index.html`, which is a source code file and should not be added to .gitignore.
+# Модель и большие файлы — не заливаются в git
+models/
+*.bin
+*.safetensors
+*.pt
+*.pth
+*.onnx
+*.gguf
+*.h5
+*.ckpt
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Служебное
+.node_modules/
+npm-debug.log*
+
+# Хранилище сгенерированного
+python_core/generated/
+
+# Локальные конфиги и временные файлы
+*.local
+*.log
+.DS_Store
+Thumbs.db
+
+# Записи процесса в этой папке
+.pi-workflow/
+
+# Служебное приложение MultiTool
+.gigatool/
+
+# СЕКРЕТНО: коды активации — ни в коем случае не публиковать!
+onyx_activation_codes_*.txt
+*activation_codes*.txt
+
+# Временные/служебные
+_probe/
+dist/
+lib/
