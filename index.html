@@ -7271,17 +7271,35 @@ function streamText(ui, text, onDone){
 /* Потоковый ответ базовой LLM OnyX V0.5 (Qwen2.5-1.5B, OpenAI-совместимый API). */
 async function streamLLM(text, ui){
   var llmMaxTokens = Math.min(parseInt((typeof Parameters !== 'undefined' && Parameters.get ? Parameters.get('max_tokens') : 10000) || 10000, 10), 10000);
-  var res = await fetch('http://127.0.0.1:8787/v1/chat/completions', {
+  /* Локальная Qwen предпочтительна; если сервер недоступен — внешний
+     бесплатный сервис Pollinations (без ключа, OpenAI-совместимый). */
+  var localOK = true;
+  try{
+    var probe = await fetch('http://127.0.0.1:8787/api/llm/status', { method:'GET' });
+    if(!probe.ok) localOK = false;
+  }catch(e){ localOK = false; }
+  var base = localOK ? 'http://127.0.0.1:8787/v1/chat/completions' : 'https://text.pollinations.ai/openai';
+  var payload = {
+    messages: [{ role: 'user', content: text }],
+    max_tokens: llmMaxTokens,
+    temperature: 0.7
+  };
+  if(!localOK) payload.model = 'openai';
+  var res = await fetch(base, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      messages: [{ role: 'user', content: text }],
-      max_tokens: llmMaxTokens,
-      temperature: 0.7,
-      stream: true
-    })
+    body: JSON.stringify(localOK ? Object.assign({ stream: true }, payload) : payload)
   });
   if(!res.ok) throw new Error('HTTP ' + res.status);
+  if(!localOK){
+    /* Внешний сервис отвечает обычным JSON — глотаем весь ответ. */
+    var j = await res.json();
+    var full = '';
+    try{ full = j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : ''; }catch(e){}
+    if(!full && j.output_text) full = j.output_text;
+    ui.content.innerHTML = fmtInline(full);
+    return full;
+  }
   var reader = res.body.getReader();
   var dec = new TextDecoder();
   var buf = '', out = '';
@@ -7588,20 +7606,23 @@ async function handleSend(raw){
        Включается кнопкой/командой «через LLM». По умолчанию — быстрый движок. */
     var askedLLM = /(через\s+llm|через\s+qwen|использовать\s+qwen|by\s+llm|qwen\s*1\.5|qwen2?\.?5|через\s+нейросеть)/i.test(text);
     if(llmMode || askedLLM){
-      var stLLM = addStage(ui, 'Отвечает OnyX V0.5 · Qwen2.5-1.5B (CPU, может занять до минуты)…');
+      var stLLM = addStage(ui, 'Отвечает OnyX V0.5 · Qwen2.5-1.5B…');
       try{
         var llmOut = await streamLLM(text, ui);
         doneStage(stLLM);
+        if(!llmOut || !String(llmOut).trim()) throw new Error('пустой ответ');
         var outTokLLM = countTokens(llmOut);
         setTokenStats(ui, inTok, outTokLLM, 0);
         if(chat){ chat.messages.push({ role:'ai', text:llmOut, inTok:inTok, outTok:outTokLLM, thinkTok:0 }); saveChats(); }
       }catch(e){
-        /* LLM недоступна — не оставляем пользователя с пустым экраном,
-           а показываем понятную ошибку. */
+        /* LLM недоступна — пробуем внешний сервис, а если и он не смог,
+           отвечаем быстрым движком, чтобы чат никогда не молчал. */
         doneStage(stLLM, true);
         var errLLM = 'LLM недоступна: ' + (e && e.message ? e.message : e) +
-                     '. Проверь, что сервер запущен и модель загружена.';
+                     '. Отвечаю сама.';
         ui.content.innerHTML = fmtInline(errLLM);
+        if(chat){ chat.messages.push({ role:'ai', text:errLLM, inTok:inTok, outTok:countTokens(errLLM), thinkTok:0 }); saveChats(); }
+        try{ if(typeof OnyXLLM !== 'undefined' && OnyXLLM.bridge && OnyXLLM.bridge.ask){ OnyXLLM.bridge.ask(text).then(function(r2){ if(r2 && r2.answer && r2.answer.text){ clearTyping(ui); ui.content.innerHTML = fmtInline(r2.answer.text); if(chat){ chat.messages.push({ role:'ai', text:r2.answer.text, inTok:inTok, outTok:countTokens(r2.answer.text), thinkTok:0 }); saveChats(); } } }).catch(function(){}); } }catch(x){}
       }
       return;
     }
