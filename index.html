@@ -1469,14 +1469,15 @@ body{background:#0c0a0b!important}
 </div>
 <div class="settings-hub">
 <div class="mblock" style="margin-bottom:10px">
-<div class="mlabel">Qwen · облачный ключ (OpenRouter)</div>
+<div class="mlabel">Qwen · облачный ключ (OpenRouter или HuggingFace)</div>
 <div class="acc-input-row">
-<input class="acc-input" id="openrouterKey" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false" style="text-transform:none">
+<input class="acc-input" id="openrouterKey" placeholder="sk-or-v1-...  или  hf_..." autocomplete="off" spellcheck="false" style="text-transform:none">
 <button class="pbtn primary" id="btnOrKeySave">Сохранить</button>
 </div>
 <div class="acc-hint" style="margin-top:8px">
-Бесплатный ключ: openrouter.ai/settings/keys → Create Key. Нужен, когда нет запущенного
-локального сервера (например на GitHub Pages): тогда отвечает облачная Qwen.
+Облачная Qwen нужна, когда нет запущенного локального сервера (например на GitHub Pages).
+Ключ: <b>OpenRouter</b> (openrouter.ai/settings/keys → Create Key, формат sk-or-v1-...) или
+<b>HuggingFace</b> (huggingface.co/settings/tokens, формат hf_..., у Qwen есть бесплатный тариф).
 Без ключа и без локального сервера Qwen ответить не сможет.
 </div>
 <div class="acc-status" id="orKeyStatus"></div>
@@ -6355,9 +6356,10 @@ function wireSettingsUI(){
           var v = (keyInput.value || '').trim();
           var show = function(cls, txt){ if(statusEl){ statusEl.className = 'acc-status ' + cls; statusEl.textContent = txt; } };
           if(!v){ show('err', 'Введи ключ.'); return; }
-          if(!/^sk-or-v1-/.test(v) && !/^sk-/.test(v)){ show('err', 'Похоже, это не ключ OpenRouter (sk-or-v1-...). Проверь.'); return; }
+          var looksOK = /^sk-or-v1-/.test(v) || /^sk-/.test(v) || /^hf_/.test(v);
+          if(!looksOK){ show('err', 'Ключ должен начинаться с sk-or-v1- (OpenRouter) или hf_ (HuggingFace). Проверь.'); return; }
           try{ localStorage.setItem('onyx_openrouter_key', v); window.ONYX_OR_KEY = v; }catch(e){}
-          show('ok', 'Ключ сохранён: облачная Qwen (OpenRouter) будет отвечать, когда нет локального сервера.');
+          show('ok', 'Ключ сохранён. Облачная Qwen будет отвечать, когда нет локального сервера.');
         };
         if(saveBtn) saveBtn.addEventListener('click', apply);
         if(keyInput) keyInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') apply(); });
@@ -7359,8 +7361,39 @@ async function streamLLM(text, ui){
     return out;
   }
 
-  /* --- Путь 2: облачная Qwen через OpenRouter --- */
+  /* --- Путь 2: облачная Qwen (OpenRouter или HuggingFace) --- */
   if(window.ONYX_OR_KEY){
+    var orKey = window.ONYX_OR_KEY;
+    var isHF = orKey.indexOf('hf_') === 0;
+    var orOut2 = '';
+    if(isHF){
+      /* HuggingFace Inference API (Qwen): доступен из РФ без геоблоков. */
+      ui.content.innerHTML = '';
+      var hfBody = {
+        inputs: text,
+        parameters: { max_new_tokens: Math.min(300, Math.max(64, llmMaxTokens)), temperature: 0.7, return_full_text: false }
+      };
+      try{
+        var hfRes = await fetch('https://router.huggingface.co/hf-inference/models/Qwen/Qwen2.5-1.5B-Instruct', {
+          method: 'POST',
+          headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + orKey },
+          body: JSON.stringify(hfBody)
+        });
+        if(hfRes.ok){
+          var hfJson = await hfRes.json();
+          var hfText = '';
+          if(Array.isArray(hfJson)){ hfText = hfJson[0] && hfJson[0].generated_text ? hfJson[0].generated_text : ''; }
+          else if(hfJson.generated_text) hfText = hfJson.generated_text;
+          else if(hfJson.error) throw new Error('HF: ' + hfJson.error);
+          if(hfText){ orOut2 = String(hfText).trim(); }
+        } else {
+          var hfErrText = await hfRes.text();
+          throw new Error('HF HTTP ' + hfRes.status + ' ' + hfErrText.slice(0,120));
+        }
+      }catch(e){ throw e; }
+      ui.content.innerHTML = fmtInline(orOut2);
+      return orOut2 || '';
+    }
     var orBody = {
       model: 'Qwen/Qwen2.5-7B-Instruct:free',
       messages: [
@@ -7373,7 +7406,7 @@ async function streamLLM(text, ui){
     };
     var orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
-      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + window.ONYX_OR_KEY },
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + orKey },
       body: JSON.stringify(orBody)
     });
     if(!orRes.ok) throw new Error('OpenRouter HTTP ' + orRes.status);
