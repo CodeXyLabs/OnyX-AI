@@ -7284,22 +7284,38 @@ async function streamLLM(text, ui){
     max_tokens: llmMaxTokens,
     temperature: 0.7
   };
-  if(!localOK) payload.model = 'openai';
-  var res = await fetch(base, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(localOK ? Object.assign({ stream: true }, payload) : payload)
-  });
-  if(!res.ok) throw new Error('HTTP ' + res.status);
   if(!localOK){
-    /* Внешний сервис отвечает обычным JSON — глотаем весь ответ. */
-    var j = await res.json();
+    /* Внешний сервис: умеренный лимит, чтобы ответ приходил быстро. */
+    payload.model = 'openai';
+    payload.max_tokens = Math.min(400, Math.max(64, llmMaxTokens));
+    payload.messages = [{ role: 'system', content: 'Ты — OnyX, русскоязычный AI-ассистент. Отвечай кратко и по делу.' }, { role: 'user', content: text }];
+  }
+  if(!localOK){
+    /* Внешний сервис отвечает обычным JSON — глотаем весь ответ.
+       Иногда возвращает пусто — пробуем ещё раз. */
     var full = '';
-    try{ full = j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : ''; }catch(e){}
-    if(!full && j.output_text) full = j.output_text;
+    for(var attempt = 0; attempt < 3 && !full; attempt++){
+      var jres = await fetch(base, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      if(!jres.ok) throw new Error('HTTP ' + jres.status);
+      var j = await jres.json();
+      try{ full = j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : ''; }catch(e){}
+      if(!full && j.output_text) full = j.output_text;
+      if(!full) await new Promise(function(res){ setTimeout(res, 1500); });
+    }
+    if(!full) throw new Error('пустой ответ внешнего сервиса');
     ui.content.innerHTML = fmtInline(full);
     return full;
   }
+  var res = await fetch(base, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(Object.assign({ stream: true }, payload))
+  });
+  if(!res.ok) throw new Error('HTTP ' + res.status);
   var reader = res.body.getReader();
   var dec = new TextDecoder();
   var buf = '', out = '';
