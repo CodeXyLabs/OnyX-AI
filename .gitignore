@@ -43,3 +43,6 @@ onyx_activation_codes_*.txt
 _probe/
 dist/
 lib/
+
+# Части модели для релизов (загружаются отдельно, не в git)
+python_core/release_model/
