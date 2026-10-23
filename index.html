@@ -1468,6 +1468,19 @@ body{background:#0c0a0b!important}
 <button class="mclose" id="settingsClose">✕</button>
 </div>
 <div class="settings-hub">
+<div class="mblock" style="margin-bottom:10px">
+<div class="mlabel">Qwen · облачный ключ (OpenRouter)</div>
+<div class="acc-input-row">
+<input class="acc-input" id="openrouterKey" placeholder="sk-or-v1-..." autocomplete="off" spellcheck="false" style="text-transform:none">
+<button class="pbtn primary" id="btnOrKeySave">Сохранить</button>
+</div>
+<div class="acc-hint" style="margin-top:8px">
+Бесплатный ключ: openrouter.ai/settings/keys → Create Key. Нужен, когда нет запущенного
+локального сервера (например на GitHub Pages): тогда отвечает облачная Qwen.
+Без ключа и без локального сервера Qwen ответить не сможет.
+</div>
+<div class="acc-status" id="orKeyStatus"></div>
+</div>
 <button class="settings-tile" data-open="accountModal">
 <span class="stile-icon">👤</span>
 <span class="stile-body"><span class="stile-title">Аккаунт и активация</span><span class="stile-desc">Вход через Google · код активации · лимиты</span></span>
@@ -6331,6 +6344,25 @@ function wireSettingsUI(){
     if(btn) btn.addEventListener('click', function(){ var m = $('#settingsModal'); if(m) m.classList.add('open'); });
     var close = $('#settingsClose');
     if(close) close.addEventListener('click', function(){ var m = $('#settingsModal'); if(m) m.classList.remove('open'); });
+    /* Ключ OpenRouter для облачной Qwen */
+    (function(){
+      var keyInput = $('#openrouterKey');
+      if(keyInput){
+        try{ keyInput.value = localStorage.getItem('onyx_openrouter_key') || ''; }catch(e){}
+        var statusEl = $('#orKeyStatus');
+        var saveBtn = $('#btnOrKeySave');
+        var apply = function(){
+          var v = (keyInput.value || '').trim();
+          var show = function(cls, txt){ if(statusEl){ statusEl.className = 'acc-status ' + cls; statusEl.textContent = txt; } };
+          if(!v){ show('err', 'Введи ключ.'); return; }
+          if(!/^sk-or-v1-/.test(v) && !/^sk-/.test(v)){ show('err', 'Похоже, это не ключ OpenRouter (sk-or-v1-...). Проверь.'); return; }
+          try{ localStorage.setItem('onyx_openrouter_key', v); window.ONYX_OR_KEY = v; }catch(e){}
+          show('ok', 'Ключ сохранён: облачная Qwen (OpenRouter) будет отвечать, когда нет локального сервера.');
+        };
+        if(saveBtn) saveBtn.addEventListener('click', apply);
+        if(keyInput) keyInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') apply(); });
+      }
+    })();
     var modal = $('#settingsModal');
     if(modal) modal.addEventListener('click', function(e){ if(e.target === modal) modal.classList.remove('open'); });
     var tiles = $$('.settings-tile[data-open]');
@@ -7271,79 +7303,111 @@ function streamText(ui, text, onDone){
 /* Потоковый ответ базовой LLM OnyX V0.5 (Qwen2.5-1.5B, OpenAI-совместимый API). */
 async function streamLLM(text, ui){
   var llmMaxTokens = Math.min(parseInt((typeof Parameters !== 'undefined' && Parameters.get ? Parameters.get('max_tokens') : 10000) || 10000, 10), 10000);
-  /* Локальная Qwen предпочтительна; если сервер недоступен — внешний
-     бесплатный сервис Pollinations (без ключа, OpenAI-совместимый). */
-  var localOK = true;
+  /* ТОЛЬКО Qwen. Порядок:
+     1) локальная Qwen2.5-1.5B (python_core/server.py, если запущен);
+     2) облачная Qwen через OpenRouter (ключ в настройках);
+     3) честная ошибка — никаких чужих моделей вместо Qwen. */
+  window.ONYX_OR_KEY = window.ONYX_OR_KEY || '';
+  try{
+    var savedKey = null;
+    try{ savedKey = localStorage.getItem('onyx_openrouter_key'); }catch(e){}
+    if(savedKey) window.ONYX_OR_KEY = savedKey;
+  }catch(e){}
+
+  var localOK = false;
   try{
     var probe = await fetch('http://127.0.0.1:8787/api/llm/status', { method:'GET' });
-    if(!probe.ok) localOK = false;
+    var pj = await probe.json();
+    localOK = probe.ok && pj && pj.loaded === true;
   }catch(e){ localOK = false; }
-  var base = localOK ? 'http://127.0.0.1:8787/v1/chat/completions' : 'https://text.pollinations.ai/openai';
-  var payload = {
-    messages: [{ role: 'user', content: text }],
-    max_tokens: llmMaxTokens,
-    temperature: 0.7
-  };
-  if(!localOK){
-    /* Внешний сервис: умеренный лимит, чтобы ответ приходил быстро. */
-    payload.model = 'openai';
-    payload.max_tokens = Math.min(400, Math.max(64, llmMaxTokens));
-    payload.messages = [{ role: 'system', content: 'Ты — OnyX, русскоязычный AI-ассистент. Отвечай кратко и по делу.' }, { role: 'user', content: text }];
-  }
-  if(!localOK){
-    /* Внешний сервис отвечает обычным JSON — глотаем весь ответ.
-       Иногда возвращает пусто — пробуем ещё раз. */
-    var full = '';
-    for(var attempt = 0; attempt < 3 && !full; attempt++){
-      var jres = await fetch(base, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
-      if(!jres.ok) throw new Error('HTTP ' + jres.status);
-      var j = await jres.json();
-      try{ full = j.choices && j.choices[0] && j.choices[0].message ? j.choices[0].message.content : ''; }catch(e){}
-      if(!full && j.output_text) full = j.output_text;
-      if(!full) await new Promise(function(res){ setTimeout(res, 1500); });
-    }
-    if(!full) throw new Error('пустой ответ внешнего сервиса');
-    ui.content.innerHTML = fmtInline(full);
-    return full;
-  }
-  var res = await fetch(base, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(Object.assign({ stream: true }, payload))
-  });
-  if(!res.ok) throw new Error('HTTP ' + res.status);
-  var reader = res.body.getReader();
-  var dec = new TextDecoder();
-  var buf = '', out = '';
-  ui.content.innerHTML = '';
-  while(true){
-    var part = await reader.read();
-    if(part.done) break;
-    buf += dec.decode(part.value, { stream: true });
-    var idx;
-    while((idx = buf.indexOf('\n\n')) >= 0){
-      var chunk = buf.slice(0, idx);
-      buf = buf.slice(idx + 2);
-      var lines = chunk.split('\n');
-      for(var i = 0; i < lines.length; i++){
-        var line = lines[i];
-        if(line.indexOf('data: ') !== 0) continue;
-        var data = line.slice(6).trim();
-        if(!data || data === '[DONE]') continue;
-        try{
-          var obj = JSON.parse(data);
-          var d = obj.choices && obj.choices[0] && obj.choices[0].delta && obj.choices[0].delta.content;
-          if(d){ out += d; ui.content.innerHTML = fmtInline(out); scrollChat(); }
-        }catch(e){}
+
+  /* --- Путь 1: локальная Qwen (стрим) --- */
+  if(localOK){
+    var res = await fetch('http://127.0.0.1:8787/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages:[{role:'user',content:text}], max_tokens: llmMaxTokens, temperature: 0.7, stream: true })
+    });
+    if(!res.ok) throw new Error('HTTP ' + res.status);
+    var reader = res.body.getReader();
+    var dec = new TextDecoder();
+    var buf = '', out = '';
+    ui.content.innerHTML = '';
+    while(true){
+      var part = await reader.read();
+      if(part.done) break;
+      buf += dec.decode(part.value, { stream: true });
+      var idx;
+      while((idx = buf.indexOf('\n\n')) >= 0){
+        var chunk = buf.slice(0, idx);
+        buf = buf.slice(idx + 2);
+        var lines = chunk.split('\n');
+        for(var i = 0; i < lines.length; i++){
+          var line = lines[i];
+          if(line.indexOf('data: ') !== 0) continue;
+          var data = line.slice(6).trim();
+          if(!data || data === '[DONE]') continue;
+          try{
+            var obj = JSON.parse(data);
+            var d = obj.choices && obj.choices[0] && obj.choices[0].delta && obj.choices[0].delta.content;
+            if(d){ out += d; ui.content.innerHTML = fmtInline(out); scrollChat(); }
+          }catch(e){}
+        }
       }
     }
+    ui.content.innerHTML = fmtInline(out);
+    return out;
   }
-  ui.content.innerHTML = fmtInline(out);
-  return out;
+
+  /* --- Путь 2: облачная Qwen через OpenRouter --- */
+  if(window.ONYX_OR_KEY){
+    var orBody = {
+      model: 'Qwen/Qwen2.5-7B-Instruct:free',
+      messages: [
+        { role:'system', content:'Ты — OnyX, русскоязычный AI-ассистент на модели Qwen. Отвечай на русском, точно и по делу.' },
+        { role:'user', content: text }
+      ],
+      max_tokens: Math.min(500, Math.max(64, llmMaxTokens)),
+      temperature: 0.7,
+      stream: true
+    };
+    var orRes = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'Authorization':'Bearer ' + window.ONYX_OR_KEY },
+      body: JSON.stringify(orBody)
+    });
+    if(!orRes.ok) throw new Error('OpenRouter HTTP ' + orRes.status);
+    var orReader = orRes.body.getReader();
+    var orDec = new TextDecoder();
+    var orBuf = '', orOut = '';
+    ui.content.innerHTML = '';
+    while(true){
+      var orPart = await orReader.read();
+      if(orPart.done) break;
+      orBuf += orDec.decode(orPart.value, { stream: true });
+      var oi;
+      while((oi = orBuf.indexOf('\n\n')) >= 0){
+        var oChunk = orBuf.slice(0, oi);
+        orBuf = orBuf.slice(oi + 2);
+        var oLines = oChunk.split('\n');
+        for(var k = 0; k < oLines.length; k++){
+          var oLine = oLines[k];
+          if(oLine.indexOf('data: ') !== 0) continue;
+          var oData = oLine.slice(6).trim();
+          if(!oData || oData === '[DONE]') continue;
+          try{
+            var oObj = JSON.parse(oData);
+            var d2 = oObj.choices && oObj.choices[0] && oObj.choices[0].delta && oObj.choices[0].delta.content;
+            if(d2){ orOut += d2; ui.content.innerHTML = fmtInline(orOut); scrollChat(); }
+          }catch(e){}
+        }
+      }
+    }
+    ui.content.innerHTML = fmtInline(orOut);
+    return orOut;
+  }
+
+  throw new Error('Qwen недоступна: запусти локальный сервер (start_server.bat) или добавь ключ OpenRouter в Настройках');
 }
 
 function evalMath(expr){
@@ -7618,27 +7682,22 @@ async function handleSend(raw){
     scrollChat();
     var ui = pair.ui;
     var inTok = countTokens(text);
-    /* Режим LLM: ответ даёт базовая модель OnyX V0.5 (Qwen2.5-1.5B).
-       Включается кнопкой/командой «через LLM». По умолчанию — быстрый движок. */
-    var askedLLM = /(через\s+llm|через\s+qwen|использовать\s+qwen|by\s+llm|qwen\s*1\.5|qwen2?\.?5|через\s+нейросеть)/i.test(text);
-    if(llmMode || askedLLM){
-      var stLLM = addStage(ui, 'Отвечает OnyX V0.5 · Qwen2.5-1.5B…');
+    /* ВСЕ ответы даёт только Qwen (локальная или облачная через OpenRouter).
+       Никаких чужих моделей. */
+    if(true){
+      var stLLM = addStage(ui, 'Отвечает Qwen…');
       try{
         var llmOut = await streamLLM(text, ui);
         doneStage(stLLM);
         if(!llmOut || !String(llmOut).trim()) throw new Error('пустой ответ');
         var outTokLLM = countTokens(llmOut);
         setTokenStats(ui, inTok, outTokLLM, 0);
-        if(chat){ chat.messages.push({ role:'ai', text:llmOut, inTok:inTok, outTok:outTokLLM, thinkTok:0 }); saveChats(); }
+        if(chat){ chat.messages.push({ role:'ai', text:llmOut, inTok:inTok, outTok:outTokLLM, thinkTok:0, model:'Qwen' }); saveChats(); }
       }catch(e){
-        /* LLM недоступна — пробуем внешний сервис, а если и он не смог,
-           отвечаем быстрым движком, чтобы чат никогда не молчал. */
         doneStage(stLLM, true);
-        var errLLM = 'LLM недоступна: ' + (e && e.message ? e.message : e) +
-                     '. Отвечаю сама.';
+        var errLLM = 'Qwen недоступна: ' + (e && e.message ? e.message : e);
         ui.content.innerHTML = fmtInline(errLLM);
-        if(chat){ chat.messages.push({ role:'ai', text:errLLM, inTok:inTok, outTok:countTokens(errLLM), thinkTok:0 }); saveChats(); }
-        try{ if(typeof OnyXLLM !== 'undefined' && OnyXLLM.bridge && OnyXLLM.bridge.ask){ OnyXLLM.bridge.ask(text).then(function(r2){ if(r2 && r2.answer && r2.answer.text){ clearTyping(ui); ui.content.innerHTML = fmtInline(r2.answer.text); if(chat){ chat.messages.push({ role:'ai', text:r2.answer.text, inTok:inTok, outTok:countTokens(r2.answer.text), thinkTok:0 }); saveChats(); } } }).catch(function(){}); } }catch(x){}
+        if(chat){ chat.messages.push({ role:'ai', text:errLLM, inTok:inTok, outTok:countTokens(errLLM), thinkTok:0, model:'Qwen' }); saveChats(); }
       }
       return;
     }
