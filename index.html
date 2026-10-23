@@ -7327,11 +7327,11 @@ var currentChatId = null;
 var busy = false;
 /* По умолчанию отвечает подключённая модель OnyX V0.5 (Qwen2.5-1.5B).
    Если пользователь выключил её кнопкой LLM, выбор запоминается. */
-var llmMode = true;
-try{
-  var savedLlmMode = localStorage.getItem('onyx_llm_mode');
-  llmMode = savedLlmMode === null ? true : savedLlmMode === '1';
-}catch(e){ llmMode = true; }
+var llmMode = false;
+/* Кнопка LLM удалена из интерфейса, поэтому режим по умолчанию — быстрый
+   движок. Включить Qwen для одного вопроса можно фразой «через LLM».
+   Старое сохранённое значение из предыдущих версий игнорируем. */
+try{ localStorage.removeItem('onyx_llm_mode'); }catch(e){}
 function updateLlmBtn(){
   var b = $('#btnLLM'); if(!b) return;
   b.classList.toggle('active', !!llmMode);
@@ -7584,8 +7584,10 @@ async function handleSend(raw){
     scrollChat();
     var ui = pair.ui;
     var inTok = countTokens(text);
-    /* Режим LLM: ответ даёт базовая модель OnyX V0.5 (Qwen2.5-1.5B). */
-    if(llmMode){
+    /* Режим LLM: ответ даёт базовая модель OnyX V0.5 (Qwen2.5-1.5B).
+       Включается кнопкой/командой «через LLM». По умолчанию — быстрый движок. */
+    var askedLLM = /(через\s+llm|через\s+qwen|использовать\s+qwen|by\s+llm|qwen\s*1\.5|qwen2?\.?5|через\s+нейросеть)/i.test(text);
+    if(llmMode || askedLLM){
       var stLLM = addStage(ui, 'Отвечает OnyX V0.5 · Qwen2.5-1.5B (CPU, может занять до минуты)…');
       try{
         var llmOut = await streamLLM(text, ui);
@@ -7594,6 +7596,8 @@ async function handleSend(raw){
         setTokenStats(ui, inTok, outTokLLM, 0);
         if(chat){ chat.messages.push({ role:'ai', text:llmOut, inTok:inTok, outTok:outTokLLM, thinkTok:0 }); saveChats(); }
       }catch(e){
+        /* LLM недоступна — не оставляем пользователя с пустым экраном,
+           а показываем понятную ошибку. */
         doneStage(stLLM, true);
         var errLLM = 'LLM недоступна: ' + (e && e.message ? e.message : e) +
                      '. Проверь, что сервер запущен и модель загружена.';
