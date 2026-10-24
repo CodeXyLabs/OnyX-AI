@@ -7362,6 +7362,48 @@ async function streamLLM(text, ui){
     localOK = probe.ok && pj && pj.loaded === true;
   }catch(e){ localOK = false; }
 
+  /* --- Путь 0.8: публичный Cloudflare-туннель к локальной Qwen (работает отовсюду) --- */
+  if(!localOK){
+    var TUNNEL_URL = 'https://cheats-rise-wisconsin-wolf.trycloudflare.com';
+    var tOk = await fetch(TUNNEL_URL + '/api/status', { method:'GET' }).then(function(r){ return r.ok; }).catch(function(){ return false; });
+    if(tOk){
+      var tRes = await fetch(TUNNEL_URL + '/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages:[{role:'user',content:text}], max_tokens: Math.min(500, Math.max(64, llmMaxTokens)), temperature: 0.7, stream: true })
+      });
+      if(tRes.ok){
+        var tReader = tRes.body.getReader();
+        var tDec = new TextDecoder();
+        var tBuf = '', tOut = '';
+        ui.content.innerHTML = '';
+        while(true){
+          var tPart = await tReader.read();
+          if(tPart.done) break;
+          tBuf += tDec.decode(tPart.value, { stream: true });
+          var ti;
+          while((ti = tBuf.indexOf('\n\n')) >= 0){
+            var tChunk = tBuf.slice(0, ti);
+            tBuf = tBuf.slice(ti + 2);
+            var tLines = tChunk.split('\n');
+            for(var tl = 0; tl < tLines.length; tl++){
+              var tline = tLines[tl];
+              if(tline.indexOf('data: ') !== 0) continue;
+              var tdata = tline.slice(6).trim();
+              if(!tdata || tdata === '[DONE]') continue;
+              try{
+                var tobj = JSON.parse(tdata);
+                var td = tobj.choices && tobj.choices[0] && (tobj.choices[0].delta ? tobj.choices[0].delta.content : tobj.choices[0].message ? tobj.choices[0].message.content : '');
+                if(td){ tOut += td; ui.content.innerHTML = fmtInline(tOut); scrollChat(); }
+              }catch(e){}
+            }
+          }
+        }
+        if(tOut){ ui.content.innerHTML = fmtInline(tOut); return tOut; }
+      }
+    }
+  }
+
   /* --- Путь 1.5: публичный HF Space (свой сервер Qwen в облаке) --- */
   var spaceUrl = '';
   try{ spaceUrl = localStorage.getItem('onyx_space_url') || ''; }catch(e){}
