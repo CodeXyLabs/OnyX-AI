@@ -2,35 +2,21 @@
 title: Onyx Qwen
 emoji: 🧠
 colorFrom: red
-colorTo: black
-sdk: docker
+colorTo: gray
+sdk: gradio
+sdk_version: "5.36.1"
+app_file: app.py
 pinned: false
-app_port: 7860
+disable_embedding: true
+license: apache-2.0
+short_description: Чат с Qwen2.5-1.5B (OnyX)
 ---
 
-# OnyX Qwen Space
+# Onyx Qwen
 
-Бесплатный HuggingFace Space: **Qwen2.5-1.5B-Instruct** как OpenAI-совместимый API.
+Бесплатный HuggingFace Space: **Qwen2.5-1.5B-Instruct** через Gradio (ZeroGPU).
 
-## Эндпоинты
+- Открой в браузере — чат с Qwen.
+- API: стандартные Gradio-эндпоинты (`/gradio_api/...`), их использует основной сайт OnyX.
 
-```
-POST /v1/chat/completions   — OpenAI-совместимый (stream тоже поддерживается)
-POST /api/chat              — простой формат {question, max_tokens, temperature}
-GET  /api/status            — статус модели
-```
-
-Ключ не требуется. CORS открыт — работает с любых сайтов, включая GitHub Pages.
-
-## Пример
-
-```bash
-curl -s https://ВАШ-АККАУНТ-onyx-qwen.hf.space/v1/chat/completions \
-  -H "Content-Type: application/json" \
-  -d '{"messages":[{"role":"user","content":"Привет!"}],"max_tokens":128}'
-```
-
-## Запуск
-
-Space использует Docker (для стабильности CPU-ресурсов). Модель скачивается с
-HuggingFace при первом запуске (~3 ГБ), затем кэшируется.
+Модель скачивается с HuggingFace при первом запуске.

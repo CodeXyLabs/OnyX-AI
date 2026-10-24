@@ -46,3 +46,6 @@ lib/
 
 # Части модели для релизов (загружаются отдельно, не в git)
 python_core/release_model/
+
+# Служебный VBS-автозапуск
+start_server_hidden.vbs
