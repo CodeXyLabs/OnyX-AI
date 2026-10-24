@@ -539,21 +539,58 @@ def generate_video(prompt, seconds=8, width=960, height=540, fps=24, on_progress
     total = int(seconds * fps)
     frames = []
 
-    # Локальная диффузия: генерируем базовые кадры моделью (segmind-small-sd),
-    # затем делаем «живое» видео панорамой/зумом по этим кадрам.
+    # Локальная диффузия всегда приоритетна (генерирует строго по промпту):
+    # один базовый кадр со стабильным seed + вариации; объектный движок —
+    # только фолбэк, если диффузия недоступна.
     online_base = None
-    if not scene.get("objects"):
-        try:
-            from .media_image import local_diffusion_image
-            base_shots = []
-            for bv in range(2, 5):
-                im = local_diffusion_image(prompt, size=min(max(width, height), 384))
-                if im is not None:
-                    base_shots.append(im.convert("RGB").resize((width, height), Image.BILINEAR))
-            if len(base_shots) >= 2:
-                online_base = base_shots
-        except Exception:
-            online_base = None
+    try:
+        from .media_image import local_diffusion_image
+        import numpy as _np
+        seed = hash_seed(prompt)
+        # усиленный промпт: маленькая модель лучше понимает английский,
+        # поэтому подмешиваем англ-описание сцены к исходному запросу
+        diff_prompt = prompt
+        _EN = {
+            "закат": "sunset", "заката": "sunset", "море": "sea", "океан": "ocean", "волн": "waves",
+            "лес": "forest", "дерев": "trees", "космос": "space", "звезд": "stars", "гибнет": "space",
+            "неон": "neon", "город": "city", "улиц": "street", "гор": "mountains", "природа": "nature",
+            "абстракци": "abstract", "вода": "water", "река": "river", "озеро": "lake", "облак": "clouds",
+            "закатом": "sunset", "планет": "planet", "галактик": "galaxy", "робот": "robot",
+            "лис": "fox", "волк": "wolf", "птиц": "bird", "кошк": "cat", "собак": "dog",
+        }
+        _words = prompt.lower().split()
+        _extra = [v for k, v in _EN.items() if any(k in w for w in _words)]
+        _extra = list(dict.fromkeys(_extra))
+        if _extra:
+            diff_prompt = ("beautiful " + ", ".join(_extra[:4]).replace("_", " ")
+                           + ", " + diff_prompt + ", cinematic, highly detailed, vibrant colors")
+        else:
+            diff_prompt = diff_prompt + ", cinematic, highly detailed, vibrant colors"
+        # несколько кандидатов — берём самый «содержательный» кадр:
+        # объект в центре ≈ высокий градиент (лапласиан) и богатая структура
+        best = None
+        best_score = -1.0
+        tries = 5
+        for ti in range(tries):
+            cand = local_diffusion_image(diff_prompt, size=min(max(width, height), 384), seed=seed + ti * 7919)
+            if cand is None:
+                continue
+            arr = _np.asarray(cand.convert("RGB"), dtype=_np.float32)
+            s = float(arr.std())
+            # резкость (градиенты) — хороший признак «осмысленной» сцены
+            import numpy as _np2
+            gx = _np2.abs(_np2.diff(arr, axis=1)).mean()
+            gy = _np2.abs(_np2.diff(arr, axis=0)).mean()
+            sharp = float(gx + gy)
+            score = sharp + min(s * 0.5, 60.0)
+            if score > best_score:
+                best_score = score
+                best = cand
+        if best is not None:
+            base1 = best.convert("RGB").resize((width, height), Image.BILINEAR)
+            online_base = [base1]
+    except Exception:
+        online_base = None
 
     # Онлайн-режим: если нет локальных кадров, пробуем Pollinations.
     if online_base is None:
@@ -589,14 +626,16 @@ def generate_video(prompt, seconds=8, width=960, height=540, fps=24, on_progress
         if marks and len(marks) > 1:
             cur_mark = marks[i % len(marks)]
         if online_base is not None:
-            # панорама по generated-кадрам: плавный сдвиг/зум
+            # Плавное «кино»: медленный зум и лёгкая панорама по базовому кадру,
+            # изредка мягко переходим на вариацию той же сцены.
             nf = len(online_base)
-            base = online_base[min(nf - 1, int(elapsed / max(0.5, seconds) * nf))]
-            zoom = 1.06 + 0.04 * math.sin(elapsed * 0.5)
+            qi = min(nf - 1, int(elapsed / max(0.5, seconds) * nf))
+            base = online_base[qi]
+            zoom = 1.04 + 0.05 * math.sin(elapsed * 0.35)
             w2, h2 = int(width * zoom), int(height * zoom)
             frame = base.resize((w2, h2), Image.BILINEAR)
-            x0 = int((w2 - width) * (0.5 + 0.4 * math.sin(elapsed * 0.7)))
-            y0 = int((h2 - height) * (0.5 + 0.4 * math.cos(elapsed * 0.5)))
+            x0 = int((w2 - width) * (0.5 + 0.35 * math.sin(elapsed * 0.5)))
+            y0 = int((h2 - height) * (0.5 + 0.35 * math.cos(elapsed * 0.4)))
             frame = frame.crop((max(0, x0), max(0, y0), max(0, x0 + width), max(0, y0 + height)))
             frame = frame.resize((width, height), Image.BILINEAR)
             # виньетка

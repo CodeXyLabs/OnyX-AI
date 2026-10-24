@@ -287,15 +287,17 @@ _DIFF_PIPE = None
 _DIFF_PIPE_NAME = ""
 
 
-def local_diffusion_image(prompt, size=512, model_hint=None):
+def local_diffusion_image(prompt, size=512, model_hint=None, seed=None):
     """Генерирует изображение локально через Stable Diffusion (модели в models/).
     Возвращает PIL.Image или None, если модели нет / не удалось."""
     global _DIFF_PIPE, _DIFF_PIPE_NAME
     import os as _os
     root = _os.path.dirname(_os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+    # приоритет: small-stable-diffusion-v0 (умнее, рисует объекты по запросу);
+    # segmind-small-sd — быстрый запасной вариант
     candidates = [
-        _os.path.join(root, "models", "segmind-small-sd"),
         _os.path.join(root, "models", "small-stable-diffusion-v0"),
+        _os.path.join(root, "models", "segmind-small-sd"),
     ]
     chosen = None
     for c in candidates:
@@ -320,13 +322,11 @@ def local_diffusion_image(prompt, size=512, model_hint=None):
     w = (w // 64) * 64
     h = (h // 64) * 64
     try:
-        out = _DIFF_PIPE(
-            prompt,
-            num_inference_steps=30,
-            width=w,
-            height=h,
-            num_images_per_prompt=1,
-        ).images[0].convert("RGB")
+        gen_kw = dict(num_inference_steps=30, width=w, height=h, num_images_per_prompt=1)
+        import torch as _t
+        if seed is not None:
+            gen_kw["generator"] = _t.Generator("cpu").manual_seed(int(seed) & 0xFFFFFFFF)
+        out = _DIFF_PIPE(prompt, **gen_kw).images[0].convert("RGB")
         return out
     except Exception:
         return None
