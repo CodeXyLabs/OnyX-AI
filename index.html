@@ -7133,29 +7133,74 @@ async function handleSend(raw){
     scrollChat();
     var ui = pair.ui;
     var inTok = countTokens(text);
-    /* Ответ даёт встроенная нейросеть OnyX — работает прямо в браузере,
-       без сервера и без облака (GitHub Pages и file://). */
-    var stLLM = addStage(ui, 'Отвечает нейросеть OnyX…');
+    /* Ответ даёт локальная языковая модель (python_core + Qwen2.5), если сервер
+       запущен; иначе — встроенная браузерная нейросеть OnyX (GitHub Pages). */
+    var stLLM = addStage(ui, 'Отвечает OnyX…');
+    var llmAnswered = false;
     try{
-      if(typeof OnyXLLM !== 'undefined' && OnyXLLM.bridge && OnyXLLM.bridge.ask && !OnyXLLM.bridge.failed){
-        var myRunNow = runId;
-        try{
-          var rBridge = await OnyXLLM.bridge.ask(text, 'default');
-          if(myRunNow !== runId) return;
-          if(rBridge && rBridge.answer && rBridge.answer.text){
-            var outTxt = String(rBridge.answer.text);
-            doneStage(stLLM);
-            clearTyping(ui);
-            await new Promise(function(resolve){ streamText(ui, outTxt, resolve); });
-            var outTokLLM = countTokens(outTxt);
-            setTokenStats(ui, inTok, outTokLLM, 0);
-            if(chat){ chat.messages.push({ role:'ai', text:outTxt, inTok:inTok, outTok:outTokLLM, thinkTok:0, model:'OnyX' }); saveChats(); }
-            return;
+      var localUp = await fetch('http://127.0.0.1:8787/api/llm/status', { method:'GET' })
+        .then(function(r){ return r.ok ? r.json() : null; })
+        .catch(function(){ return null; });
+      if(localUp && localUp.exists){
+        var llmRes = await fetch('http://127.0.0.1:8787/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ messages:[{role:'user',content:text}], max_tokens: Math.min(500, Math.max(64, Parameters.get('max_tokens') || 500)), temperature: 0.7, stream: true })
+        });
+        if(llmRes.ok){
+          var llmReader = llmRes.body.getReader();
+          var llmDec = new TextDecoder();
+          var llmBuf = '', llmOut = '';
+          ui.content.innerHTML = '';
+          while(true){
+            var llmPart = await llmReader.read();
+            if(llmPart.done) break;
+            llmBuf += llmDec.decode(llmPart.value, { stream: true });
+            var li;
+            while((li = llmBuf.indexOf('\n\n')) >= 0){
+              var lChunk = llmBuf.slice(0, li);
+              llmBuf = llmBuf.slice(li + 2);
+              var lLines = lChunk.split('\n');
+              for(var ll = 0; ll < lLines.length; ll++){
+                var lline = lLines[ll];
+                if(lline.indexOf('data: ') !== 0) continue;
+                var ldata = lline.slice(6).trim();
+                if(!ldata || ldata === '[DONE]') continue;
+                try{
+                  var lobj = JSON.parse(ldata);
+                  var ld = lobj.choices && lobj.choices[0] && lobj.choices[0].delta && lobj.choices[0].delta.content;
+                  if(ld){ llmOut += ld; ui.content.innerHTML = fmtInline(llmOut); scrollChat(); }
+                }catch(e){}
+              }
+            }
           }
-        }catch(e){}
+          if(llmOut && String(llmOut).trim()){
+            doneStage(stLLM);
+            var outTokLLM2 = countTokens(llmOut);
+            setTokenStats(ui, inTok, outTokLLM2, 0);
+            if(chat){ chat.messages.push({ role:'ai', text:llmOut, inTok:inTok, outTok:outTokLLM2, thinkTok:0, model:'OnyX LLM' }); saveChats(); }
+            llmAnswered = true;
+          }
+        }
       }
     }catch(e){}
-    doneStage(stLLM, true);
+    if(!llmAnswered && typeof OnyXLLM !== 'undefined' && OnyXLLM.bridge && OnyXLLM.bridge.ask && !OnyXLLM.bridge.failed){
+      try{
+        var rBridge = await OnyXLLM.bridge.ask(text, 'default');
+        if(rBridge && rBridge.answer && rBridge.answer.text){
+          var outTxt = String(rBridge.answer.text);
+          doneStage(stLLM);
+          clearTyping(ui);
+          await new Promise(function(resolve){ streamText(ui, outTxt, resolve); });
+          var outTokLLM = countTokens(outTxt);
+          setTokenStats(ui, inTok, outTokLLM, 0);
+          if(chat){ chat.messages.push({ role:'ai', text:outTxt, inTok:inTok, outTok:outTokLLM, thinkTok:0, model:'OnyX' }); saveChats(); }
+          llmAnswered = true;
+        }
+      }catch(e){}
+    }
+    if(!llmAnswered) doneStage(stLLM, true);
+    else return;
     var reasoningLog = [];
     var thinkBuf = '';
     var version = currentVersion;
