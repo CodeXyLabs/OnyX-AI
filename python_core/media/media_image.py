@@ -334,22 +334,25 @@ def local_diffusion_image(prompt, size=512, model_hint=None):
 
 def generate_image(prompt, size=768, use_online=True, timeout=40, style=None):
     """Генерирует изображение и возвращает путь к файлу + данные о водяном знаке.
-    Приоритет источников: Pollinations → Openverse → объектный движок → процедурный."""
+    Приоритет: локальная диффузия → Pollinations → Openverse → объектный движок → процедурный."""
     ts = int(time.time() * 1000)
     mode = "procedural"
     img = None
 
-    # 0) Локальная диффузия: segmind-small-sd / small-stable-diffusion (если скачаны)
-    if img is None:
-        try:
-            img = local_diffusion_image(prompt, size=min(size, 384), model_hint=style)
-            if img is not None:
-                mode = "local-diffusion"
-        except Exception:
-            img = None
+    # 0) Локальная диффузия: segmind-small-sd / small-stable-diffusion (если скачаны).
+    #    Приоритетная: если удалось — онлайн не перебивает.
+    local_ok = False
+    try:
+        cand = local_diffusion_image(prompt, size=min(size, 384), model_hint=style)
+        if cand is not None:
+            img = cand
+            mode = "local-diffusion"
+            local_ok = True
+    except Exception:
+        img = None
 
-    # 1) Онлайн-генерация: Pollinations (если доступен)
-    if use_online:
+    # 1) Онлайн-генерация: Pollinations (только если локальная диффузия не сработала)
+    if use_online and not local_ok:
         try:
             import services as svc
             data = svc.pollinations_image(prompt, size=size, seed=_hash_seed(prompt) % 10_000_000)

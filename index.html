@@ -7085,14 +7085,19 @@ function addVideoNode(ui, vid, prompt){
     wrap.style.maxWidth = '520px';
     var v = document.createElement('video');
     v.src = vid.url;
-    v.poster = '';
+    v.autoplay = true;
     v.controls = true;
     v.loop = true;
     v.muted = true;
+    v.playsInline = true;
     v.setAttribute('playsinline', '');
+    v.setAttribute('preload', 'auto');
     v.style.width = '100%';
     v.style.display = 'block';
+    v.style.background = '#000';
+    v.style.aspectRatio = '16/9';
     v.addEventListener('loadeddata', function(){ scrollChat(); });
+    v.addEventListener('canplay', function(){ try{ v.play().catch(function(){}); }catch(e){} });
     wrap.appendChild(v);
     var bar = document.createElement('div');
     bar.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;padding:8px 10px;border-top:1px solid rgba(255,255,255,.08)';
@@ -7102,7 +7107,15 @@ function addVideoNode(ui, vid, prompt){
     bar.addEventListener('click', function(e){
       var act = e.target && e.target.getAttribute ? e.target.getAttribute('data-act') : null;
       if(!act) return;
-      if(act === 'save' && typeof OnyXVideo !== 'undefined') OnyXVideo.save(vid, 'onyx_' + Date.now() + '.' + (vid.ext || 'webm'));
+      if(act === 'save'){
+        try{
+          var a = document.createElement('a');
+          a.href = vid.url;
+          a.download = 'onyx_video.' + (vid.ext || 'mp4');
+          document.body.appendChild(a); a.click();
+          setTimeout(function(){ if(a.parentNode) a.parentNode.removeChild(a); }, 1500);
+        }catch(err){}
+      }
       if(act === 'open') window.open(vid.url, '_blank');
     });
     ui.bubble.appendChild(wrap); scrollChat();
