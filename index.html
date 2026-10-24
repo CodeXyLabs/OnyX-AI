@@ -576,6 +576,7 @@ body{background:#0a0a0a}
 <div class="composer-inner">
 <textarea id="input" rows="1" placeholder="Задай вопрос…"></textarea>
 <button class="img-btn" id="btnImage" title="Режим рисования">🎨</button>
+<button class="img-btn" id="btnVideo" title="Режим создания видео">🎬</button>
 <button class="send-btn" id="send" title="Отправить">➤</button>
 </div>
 <div class="composer-hint">OnyX · 1 токен = 1 символ · стоимость: <b>$0.002 / токен</b></div>
@@ -6890,6 +6891,7 @@ var runId = 0;
 var showReasoning = true;
 var currentVersion = '4.3';
 var imageMode = false;
+var videoMode = false;
 
 function saveState(){ try{ localStorage.setItem('onyx_state_v17', JSON.stringify({ version:currentVersion, showReasoning:showReasoning })); }catch(e){} }
 function loadState(){ try{ var r = localStorage.getItem('onyx_state_v17'); if(r){ var p = JSON.parse(r); if(p && p.version && VERSIONS[p.version]) currentVersion = p.version; if(p && typeof p.showReasoning === 'boolean') showReasoning = p.showReasoning; } }catch(e){} }
@@ -7133,6 +7135,74 @@ async function handleSend(raw){
     scrollChat();
     var ui = pair.ui;
     var inTok = countTokens(text);
+    /* Режим создания видео: локальный сервер рендерит MP4 диффузией+ffmpeg. */
+    var wantsVideo = videoMode || /(видео|видеоролик|ролик|анимаци|video|клип|создай виде)/iu.test(text);
+    if(wantsVideo){
+      videoMode = false; updateVideoBtn();
+      var stVid = addStage(ui, 'Нейросеть создаёт видео (может занять минуту-две)…');
+      var vidOut = null;
+      try{
+        var vRes = await fetch('http://127.0.0.1:8787/api/video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, seconds: 5, width: 512, height: 288, online: false })
+        });
+        vidOut = await vRes.json();
+      }catch(e){ vidOut = null; }
+      if(myRun !== runId) return;
+      if(vidOut && vidOut.url){
+        doneStage(stVid);
+        clearTyping(ui);
+        var vidAns = 'Готово — вот видео:';
+        ui.content.innerHTML = fmtInline(vidAns);
+        var vd = { url: vidOut.url, ext: vidOut.ext || 'mp4', seconds: vidOut.seconds || 5, width: vidOut.width || 512, height: vidOut.height || 288, watermarked: !!vidOut.watermarked };
+        addVideoNode(ui, vd, text);
+        if(showReasoning) renderReasoningBlock(ui, ['Видео сгенерировано локальной нейросетью']);
+        var vidTok = countTokens(vidAns);
+        setTokenStats(ui, inTok, vidTok, 0);
+        if(chat){ chat.messages.push({ role:'ai', text:vidAns, videoUrl:vd.url, videoExt:vd.ext, imagePrompt:text, inTok:inTok, outTok:vidTok, thinkTok:0 }); saveChats(); }
+      } else {
+        doneStage(stVid, true);
+        var vidErr = 'Не удалось создать видео: запусти локальный сервер (start_server.bat).';
+        clearTyping(ui);
+        await new Promise(function(resolve){ streamText(ui, vidErr, resolve); });
+        if(chat){ chat.messages.push({ role:'ai', text:vidErr, inTok:inTok, outTok:countTokens(vidErr), thinkTok:0 }); saveChats(); }
+      }
+      return;
+    }
+    /* Режим рисования: изображение через локальный сервер. */
+    if(imageMode || /(нарисуй|нарисовать|изобрази|сгенерируй картинк|создай изображени|покажи картинк)/iu.test(text)){
+      imageMode = false; updateImageBtn();
+      var stImg = addStage(ui, 'Нейросеть рисует изображение…');
+      var imgRes2 = null;
+      try{
+        var iR2 = await fetch('http://127.0.0.1:8787/api/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, size: 384, online: false })
+        });
+        imgRes2 = await iR2.json();
+      }catch(e){ imgRes2 = null; }
+      if(myRun !== runId) return;
+      if(imgRes2 && imgRes2.url){
+        doneStage(stImg);
+        clearTyping(ui);
+        var imAns = 'Готово — вот что получилось:';
+        ui.content.innerHTML = fmtInline(imAns);
+        addImageNode(ui, imgRes2.url, text, false, !!imgRes2.watermarked);
+        if(showReasoning) renderReasoningBlock(ui, ['Изображение сгенерировано локальной нейросетью']);
+        var imTok = countTokens(imAns);
+        setTokenStats(ui, inTok, imTok, 0);
+        if(chat){ chat.messages.push({ role:'ai', text:imAns, imageUrl:imgRes2.url, imagePrompt:text, inTok:inTok, outTok:imTok, thinkTok:0 }); saveChats(); }
+      } else {
+        doneStage(stImg, true);
+        var imErr = 'Не удалось сгенерировать изображение: запусти локальный сервер (start_server.bat).';
+        clearTyping(ui);
+        await new Promise(function(resolve){ streamText(ui, imErr, resolve); });
+        if(chat){ chat.messages.push({ role:'ai', text:imErr, inTok:inTok, outTok:countTokens(imErr), thinkTok:0 }); saveChats(); }
+      }
+      return;
+    }
     /* Ответ даёт локальная языковая модель (python_core + Qwen2.5), если сервер
        запущен; иначе — встроенная браузерная нейросеть OnyX (GitHub Pages). */
     var stLLM = addStage(ui, 'Отвечает OnyX…');
@@ -7297,22 +7367,37 @@ var wantsVideo = /(видео|видеоролик|ролик|анимаци|vid
       var stImg = addStage(ui, 'Нейросеть рисует изображение…');
       await sleep(rndInt(300, 500));
       if(myRun !== runId) return;
-var imgUrl = generateImageUrl(text), imgStamped = false;
-      /* Python-сервер умеет рисовать изображения и впечатывать водяной знак.
-       * Если он доступен — используем его; иначе canvas-сервис JS. */
-      if(typeof OnyXPython !== 'undefined' && OnyXPython.image){
-        try{
-          var pyImg = await OnyXPython.image(text, { size: 1024 });
-          if(pyImg && pyImg.url){ imgUrl = pyImg.url; imgStamped = !!pyImg.watermarked; }
-        }catch(e){ pyImg = null; }
-        if(myRun !== runId) return;
+var imgUrl = null, imgStamped = false;
+      /* Локальный сервер рисует диффузией (segmind-small-sd) и впечатывает
+       * водяной знак. Если сервер недоступен — внешний canvas-сервис JS. */
+      try{
+        var iRes = await fetch('http://127.0.0.1:8787/api/image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ prompt: text, size: 384, online: false })
+        });
+        var iJson = await iRes.json();
+        if(iJson && iJson.url){ imgUrl = iJson.url; imgStamped = !!iJson.watermarked; }
+      }catch(e){ imgUrl = null; }
+      if(!imgUrl && (typeof generateImageUrl === 'function')){
+        try{ imgUrl = generateImageUrl(text); imgStamped = false; }catch(e){ imgUrl = null; }
       }
-      if((!imgUrl || imgUrl.indexOf('data:') !== 0) && typeof OnyXImage !== 'undefined' && OnyXImage.generate){
+      if(!imgUrl && typeof OnyXImage !== 'undefined' && OnyXImage.generate){
         try{
-          var made = await OnyXImage.generate(text, { size: 1024 });
+          var made = await OnyXImage.generate(text, { size: 512 });
           if(made && made.url){ imgUrl = made.url; imgStamped = !!made.watermarked; }
         }catch(e){ imgStamped = false; }
         if(myRun !== runId) return;
+      }
+      if(!imgUrl){
+        var noImg = 'Не удалось сгенерировать изображение: запусти локальный сервер (start_server.bat).';
+        clearTyping(ui);
+        await new Promise(function(resolve){ streamText(ui, noImg, resolve); });
+        if(myRun !== runId) return;
+        var noImgTok = countTokens(noImg);
+        setTokenStats(ui, inTok, noImgTok, 0);
+        if(chat){ chat.messages.push({ role:'ai', text:noImg, inTok:inTok, outTok:noImgTok, thinkTok:0 }); saveChats(); }
+        return;
       }
       clearTyping(ui);
       ui.content.innerHTML = 'Готово — вот что получилось:';
@@ -7587,6 +7672,7 @@ function updateReasoningToggle(){
   }catch(e){}
 }
 function updateImageBtn(){ try{ var b = $('#btnImage'); if(!b) return; if(imageMode) b.classList.add('on'); else b.classList.remove('on'); }catch(e){} }
+function updateVideoBtn(){ try{ var b = $('#btnVideo'); if(!b) return; if(videoMode) b.classList.add('on'); else b.classList.remove('on'); }catch(e){} }
 function renderRange(name, value){
   try{
     var wrap = document.querySelector('.range[data-range="' + name + '"]'); if(!wrap) return;
@@ -7789,6 +7875,8 @@ function init(){
   }
   var imgBtn = $('#btnImage');
   if(imgBtn) imgBtn.addEventListener('click', function(){ imageMode = !imageMode; updateImageBtn(); toast(imageMode ? 'Режим рисования включён' : 'Режим рисования выключен'); if(input) input.focus(); });
+  var vidBtn = $('#btnVideo');
+  if(vidBtn) vidBtn.addEventListener('click', function(){ videoMode = !videoMode; updateVideoBtn(); toast(videoMode ? 'Режим создания видео включён' : 'Режим создания видео выключен'); if(input) input.focus(); });
   var chips = $$('.chip');
   for(var i = 0; i < chips.length; i++){
     (function(ch){ ch.addEventListener('click', function(){ try{ var q = ch.getAttribute('data-q'); if(q) handleSend(q); }catch(e){} }); })(chips[i]);
