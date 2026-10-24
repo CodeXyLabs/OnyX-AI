@@ -1469,16 +1469,27 @@ body{background:#0c0a0b!important}
 </div>
 <div class="settings-hub">
 <div class="mblock" style="margin-bottom:10px">
+<div class="mlabel">Qwen · облачный сервер (свой HF Space)</div>
+<div class="acc-input-row">
+<input class="acc-input" id="spaceUrlInput" placeholder="https://твой-аккаунт-onyx-qwen.hf.space" autocomplete="off" spellcheck="false" style="text-transform:none">
+<button class="pbtn primary" id="btnSpaceSave">Сохранить сервер</button>
+</div>
+<div class="acc-hint" style="margin-top:8px">
+<b>Рекомендуемый способ:</b> создай бесплатный HuggingFace Space (файлы в папке qwen_hf_space),
+и вставь его URL сюда. Тогда Qwen отвечает отовсюду (и с GitHub Pages), без ключей.
+Этот способ приоритетнее ключа ниже.
+</div>
+<div class="acc-status" id="spaceStatus"></div>
+</div>
+<div class="mblock" style="margin-bottom:10px">
 <div class="mlabel">Qwen · облачный ключ (OpenRouter или HuggingFace)</div>
 <div class="acc-input-row">
 <input class="acc-input" id="openrouterKey" placeholder="sk-or-v1-...  или  hf_..." autocomplete="off" spellcheck="false" style="text-transform:none">
 <button class="pbtn primary" id="btnOrKeySave">Сохранить</button>
 </div>
 <div class="acc-hint" style="margin-top:8px">
-Облачная Qwen нужна, когда нет запущенного локального сервера (например на GitHub Pages).
-Ключ: <b>OpenRouter</b> (openrouter.ai/settings/keys → Create Key, формат sk-or-v1-...) или
-<b>HuggingFace</b> (huggingface.co/settings/tokens, формат hf_..., у Qwen есть бесплатный тариф).
-Без ключа и без локального сервера Qwen ответить не сможет.
+Резервный способ: <b>OpenRouter</b> (могут быть региональные блоки) или <b>HuggingFace</b>
+(huggingface.co/settings/tokens, формат hf_..., у Qwen есть бесплатный тариф).
 </div>
 <div class="acc-status" id="orKeyStatus"></div>
 </div>
@@ -6345,7 +6356,7 @@ function wireSettingsUI(){
     if(btn) btn.addEventListener('click', function(){ var m = $('#settingsModal'); if(m) m.classList.add('open'); });
     var close = $('#settingsClose');
     if(close) close.addEventListener('click', function(){ var m = $('#settingsModal'); if(m) m.classList.remove('open'); });
-    /* Ключ OpenRouter для облачной Qwen */
+    /* Ключ OpenRouter/HF для облачной Qwen */
     (function(){
       var keyInput = $('#openrouterKey');
       if(keyInput){
@@ -6363,6 +6374,34 @@ function wireSettingsUI(){
         };
         if(saveBtn) saveBtn.addEventListener('click', apply);
         if(keyInput) keyInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') apply(); });
+      }
+    })();
+    /* URL публичного HF Space с Qwen */
+    (function(){
+      var spInput = $('#spaceUrlInput');
+      if(spInput){
+        try{ spInput.value = localStorage.getItem('onyx_space_url') || ''; }catch(e){}
+        var spStatus = $('#spaceStatus');
+        var spBtn = $('#btnSpaceSave');
+        var applySp = function(){
+          var v = (spInput.value || '').trim().replace(/\/+$/, '');
+          var show = function(cls, txt){ if(spStatus){ spStatus.className = 'acc-status ' + cls; spStatus.textContent = txt; } };
+          if(!v){ show('err', 'Введи URL Space.'); return; }
+          if(!/^https:\/\//.test(v)){ show('err', 'URL должен начинаться с https://'); return; }
+          show('load', 'Проверяю сервер…');
+          fetch(v + '/api/status').then(function(r){
+            if(!r.ok) throw new Error('HTTP ' + r.status);
+            return r.json();
+          }).then(function(j){
+            if(!j || !j.loaded) throw new Error('модель не готова');
+            try{ localStorage.setItem('onyx_space_url', v); }catch(e){}
+            show('ok', 'Сервер работает! Qwen будет отвечать с ' + v);
+          }).catch(function(err){
+            show('err', 'Не удалось подключиться к ' + v + ' (' + (err && err.message ? err.message : err) + '). Проверь, что Space запущен.');
+          });
+        };
+        if(spBtn) spBtn.addEventListener('click', applySp);
+        if(spInput) spInput.addEventListener('keydown', function(e){ if(e.key === 'Enter') applySp(); });
       }
     })();
     var modal = $('#settingsModal');
@@ -7322,6 +7361,53 @@ async function streamLLM(text, ui){
     var pj = await probe.json();
     localOK = probe.ok && pj && pj.loaded === true;
   }catch(e){ localOK = false; }
+
+  /* --- Путь 1.5: публичный HF Space (свой сервер Qwen в облаке) --- */
+  var spaceUrl = '';
+  try{ spaceUrl = localStorage.getItem('onyx_space_url') || ''; }catch(e){}
+  if(spaceUrl){
+    var spBase = String(spaceUrl).replace(/\/+$/, '');
+    var spProbe = await fetch(spBase + '/api/status', { method:'GET' }).then(function(r){ return r.ok; }).catch(function(){ return false; });
+    if(spProbe){
+      var spText = text;
+      var spOut = '';
+      var spRes = await fetch(spBase + '/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages:[{role:'user',content:spText}], max_tokens: Math.min(500, Math.max(64, llmMaxTokens)), temperature: 0.7, stream: true })
+      });
+      if(spRes.ok){
+        var spReader = spRes.body.getReader();
+        var spDec = new TextDecoder();
+        var spBuf = '';
+        ui.content.innerHTML = '';
+        while(true){
+          var spPart = await spReader.read();
+          if(spPart.done) break;
+          spBuf += spDec.decode(spPart.value, { stream: true });
+          var spi;
+          while((spi = spBuf.indexOf('\n\n')) >= 0){
+            var spChunk = spBuf.slice(0, spi);
+            spBuf = spBuf.slice(spi + 2);
+            var spLines = spChunk.split('\n');
+            for(var sl = 0; sl < spLines.length; sl++){
+              var sline = spLines[sl];
+              if(sline.indexOf('data: ') !== 0) continue;
+              var sdata = sline.slice(6).trim();
+              if(!sdata || sdata === '[DONE]') continue;
+              try{
+                var sobj = JSON.parse(sdata);
+                var sd = sobj.choices && sobj.choices[0] && (sobj.choices[0].delta ? sobj.choices[0].delta.content : sobj.choices[0].message ? sobj.choices[0].message.content : '');
+                if(sd){ spOut += sd; ui.content.innerHTML = fmtInline(spOut); scrollChat(); }
+              }catch(e){}
+            }
+          }
+        }
+        if(spOut){ ui.content.innerHTML = fmtInline(spOut); return spOut; }
+      }
+      throw new Error('Space не ответил');
+    }
+  }
 
   /* --- Путь 1: локальная Qwen (стрим) --- */
   if(localOK){
