@@ -1,5 +1,6 @@
 # Модель и большие файлы — не заливаются в git
 models/
+python_core/
 *.bin
 *.safetensors
 *.pt
